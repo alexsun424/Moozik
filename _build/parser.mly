@@ -20,7 +20,7 @@
 %%
 
 program:
-PLAYBACK_TEXT SEMICOLON { Playback($1) }
+PLAYBACK_TEXT  { Playback($1) }
 
 
 

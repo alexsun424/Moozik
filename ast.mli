@@ -12,4 +12,10 @@ type program =
     Playback of string
 
 
+(* program = {
+    key: "C"
+    time: "4/4"
+    notes: 
+}
 
+pythonscript keyvariable timevariable notesvariable *)

@@ -24,7 +24,7 @@ and playback = parse
 
 and playback_string = parse
 | '"' {playback lexbuf}
-| (['a'-'z'] | ['0' - '9'])* as pb { PLAYBACK_TEXT(pb) }
+| (['a'-'z'] | ['0' - '9'] | " ")* as pb { PLAYBACK_TEXT(pb) }
 
 
 
