@@ -1,0 +1,26 @@
+### Starting build.
+# Target: scanner.mll, tags: { extension:mll, file:scanner.mll, lexer, ocaml, ocamllex, quiet }
+/Users/alexsun/.opam/default/bin/ocamllex.opt -q scanner.mll
+# Target: scanner.ml.depends, tags: { extension:ml, file:scanner.ml, ocaml, ocamldep, quiet }
+/Users/alexsun/.opam/default/bin/ocamldep.opt -modules scanner.ml > scanner.ml.depends
+# Target: parser.mly, tags: { extension:mly, file:parser.mly, infer, ocaml, ocamlyacc, parser, quiet }
+/Users/alexsun/.opam/default/bin/ocamlyacc parser.mly # cached
+# Target: parser.mli.depends, tags: { extension:mli, file:parser.mli, ocaml, ocamldep, quiet }
+/Users/alexsun/.opam/default/bin/ocamldep.opt -modules parser.mli > parser.mli.depends # cached
+# Target: ast.mli.depends, tags: { extension:mli, file:ast.mli, ocaml, ocamldep, quiet }
+/Users/alexsun/.opam/default/bin/ocamldep.opt -modules ast.mli > ast.mli.depends # cached
+# Target: ast.cmi, tags: { byte, compile, extension:mli, file:ast.mli, interf, ocaml, quiet }
+/Users/alexsun/.opam/default/bin/ocamlc.opt -c -o ast.cmi ast.mli # cached
+# Target: parser.cmi, tags: { byte, compile, extension:mli, file:parser.mli, interf, ocaml, quiet }
+/Users/alexsun/.opam/default/bin/ocamlc.opt -c -o parser.cmi parser.mli # cached
+# Target: scanner.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:scanner.cmo, file:scanner.ml, implem, ocaml, quiet }
+/Users/alexsun/.opam/default/bin/ocamlc.opt -c -o scanner.cmo scanner.ml
+# Target: parser.ml.depends, tags: { extension:ml, file:parser.ml, ocaml, ocamldep, quiet }
+/Users/alexsun/.opam/default/bin/ocamldep.opt -modules parser.ml > parser.ml.depends # cached
+# Target: parser.cmx, tags: { compile, extension:cmx, extension:ml, file:parser.cmx, file:parser.ml, implem, native, ocaml, quiet }
+/Users/alexsun/.opam/default/bin/ocamlopt.opt -c -o parser.cmx parser.ml # cached
+# Target: scanner.cmx, tags: { compile, extension:cmx, extension:ml, file:scanner.cmx, file:scanner.ml, implem, native, ocaml, quiet }
+/Users/alexsun/.opam/default/bin/ocamlopt.opt -c -o scanner.cmx scanner.ml
+# Target: scanner.native, tags: { dont_link_with, extension:native, file:scanner.native, link, native, ocaml, program, quiet }
+/Users/alexsun/.opam/default/bin/ocamlopt.opt parser.cmx scanner.cmx -o scanner.native
+# Compilation successful.
