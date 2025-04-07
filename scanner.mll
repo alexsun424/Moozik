@@ -2,12 +2,17 @@
 
 rule tokenize = parse
   [' ' '\t' '\r'] { tokenize lexbuf }
+| '.' { instance_var lexbuf }
 | '\n' { NEWLINE }
 | '[' { LEFT_BRAC }
 | ']' { RIGHT_BRAC }
 | '(' { LEFT_PAREN }
 | ')' { RIGHT_PAREN }
 | ';' { SEMICOLON }
+| '*' { STAR }
+| '+' { SHARP }
+| '-' { FLAT }
+| '0' { NATURAL }
 | "playback(" { playback lexbuf } (* is it playback() or Moozik.playback() *)
 | "Moozik.playback(" { playback lexbuf }
 | '=' { EQUALS }
@@ -17,6 +22,11 @@ rule tokenize = parse
 | "Section" { SECTION }
 | "Measure" { MEASURE }
 | (['a'-'z'] | ['0' - '9'])* as id { VARIABLE(id) }
+
+and instance_var = parse
+| (['a'-'z'] | ['0' - '9'])* {INSTANCE_VAR}
+| '=' {tokenize lexbuf}
+
 
 and playback = parse
 | ')' { tokenize lexbuf }

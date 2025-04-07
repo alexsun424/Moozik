@@ -1,21 +1,29 @@
-type measures =
-    |Note of string
-    |Measure of string list
+module StringMap = Map.Make(String)
 
-type section = string list
+(* type sign = 
+| Sharp of string
+| Flat of string
+| Natural of string
+| Empty of string *)
 
-type track = section list
+type note = (string, string, string)
 
-type composition = track list 
+type measures = string
 
-type program = 
-    Playback of string
-
-
-(* program = {
-    key: "C"
-    time: "4/4"
-    notes: 
+type section = 
+{
+    key: string;
+    time: string;
 }
 
-pythonscript keyvariable timevariable notesvariable *)
+type track = 
+{
+    instrument: string;
+    section list
+}
+
+type composition = 
+{
+    tracks: track StringMap.t
+}
+
