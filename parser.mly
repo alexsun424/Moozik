@@ -1,9 +1,10 @@
 %{open Ast %}
 
 %token NEWLINE
-%token SHARP FLAT NATURAL
+%token <string>NOTE <string>CHORD
 %token STAR
-%token <string> VARIABLE
+%token <string> ID
+%token <string> INSTANCE_VAR
 %token LEFT_BRAC RIGHT_BRAC 
 %token LEFT_PAREN RIGHT_PAREN 
 %token SEMICOLON
@@ -11,62 +12,66 @@
 %token EQUALS
 %token NEW
 %token COMPOSITION TRACK SECTION MEASURE
+%token BEGIN END
 
 %left LEFT_BRAC LEFT_PARENT
+%left SEMICOLON
 %right RIGHT_BRAC RIGHT_PAREN
+%right ASSIGN
 
-%start composition
-%type <Ast.composition> composition
+%start program
+%type <Ast.program> program
 
 
 %%
 
-composition:
-|assign_left ASSIGN value composition
-|assign_left ASSIGN value
-|PLAYBACK_TEXT composition
-|PLAYBACK_TEXT
+program:
+|expr 
+|WHILE expr
+|IF expr
 
-assign_left:
-|class ID
-|ID INSTANCE_VAR
-|ID 
+expr:
+|                                  { [] }
+|assign_to ASSIGN value expr       { ASN($1, $3) }
+|ID INSTANCE_VAR ASSIGN value expr { ASNInstVar($1, $2, $3) }
+|PLAYBACK_TEXT expr
+
+assign_to:
+|class ID        { $2 } 
+|ID              { $1 } 
 
 value:
-|NEW class LEFT_PAREN RIGHT_PAREN
-|measures 
-|LEFT_BRAC measures RIGHT_BRAC
-|LEFT_PAREN measures RIGHT_PAREN
+|NEW class LEFT_PAREN RIGHT_PAREN { $2 } 
+|BEGIN measures END               { $1 }
+|LEFT_BRAC measures RIGHT_BRAC    { $1 }
+|CHORD                            { '{' ^ $1 ^ '}' }
 
 class:
-|COMPOSITION
-|TRACK
-|SECTION
+|COMPOSITION { $1 }
+|TRACK       { $1 }
+|SECTION     { $1 }
 
 measures:
-|bar SEMICOLON measures
-|bar SEMICOLON
+|                        { "" }
+| bar SEMICOLON measures { $3 ^ $1 }
 
 bar:
-|id SEMICOLON { measures($1) }
-|note star bar { measures($1) }
-|note star SEMICOLON { measures($1) }
-|note bar { measures($1) }
-|note SEMICOLON { measures($1) }
-|STAR SEMICOLON bar { measures($1) }
-|STAR SEMICOLON { measures($1) }
+                  { "" }              
+| nonVarLit bar   { $2 ^ $1 }                          
+| var             { $1 }                 
 
-star:
-|bar { $1 }
+var:
+| ID { Var($1) } 
 
-note:
-NOTE DUR sign { note($1, $2, $3) }
+nonVarLit:
+| NOTE  { $1 } 
+| CHORD { '{' ^ $1 ^ '}' }
 
-sign:
-        { $1 }
-SHARP   { $1 }
-FLAT    { $1 }
-NATURAL { $1 }
+
+
+
+
+
 
 
 

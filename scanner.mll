@@ -9,24 +9,28 @@ rule tokenize = parse
 | '(' { LEFT_PAREN }
 | ')' { RIGHT_PAREN }
 | ';' { SEMICOLON }
-| '*' { STAR }
-| '+' { SHARP }
-| '-' { FLAT }
-| '0' { NATURAL }
+| '*' ['1'-'9']+ { STAR }
+| ['a'-'g']+ ['1'-'9']+ (' '|'+'|'-') as note { NOTE(note) }
+| '{' { chord lexbuf } 
 | "playback(" { playback lexbuf } (* is it playback() or Moozik.playback() *)
 | "Moozik.playback(" { playback lexbuf }
 | '=' { EQUALS }
 | "new" { NEW }
+| "BEGIN" { BEGIN }
+| "END" { END }
 | "Composition" { COMPOSITION }
 | "Track" { TRACK }
 | "Section" { SECTION }
 | "Measure" { MEASURE }
-| (['a'-'z'] | ['0' - '9'])* as id { VARIABLE(id) }
+| (['a'-'z'] | ['0' - '9'])* as id { ID(id) }
+
+and chord = parse
+| '}' {tokenize lexbuf}
+| _ as chord { CHORD(chord) }
 
 and instance_var = parse
 | (['a'-'z'] | ['0' - '9'])* {INSTANCE_VAR}
-| '=' {tokenize lexbuf}
-
+| _ {tokenize lexbuf}
 
 and playback = parse
 | ')' { tokenize lexbuf }
