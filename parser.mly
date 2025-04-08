@@ -1,7 +1,8 @@
 %{open Ast %}
 
 %token NEWLINE
-%token <string>NOTE <string>CHORD
+%token <string>NOTE 
+%token <string>CHORD
 %token STAR
 %token <string> ID
 %token <string> INSTANCE_VAR
