@@ -15,6 +15,9 @@ scanner.ml : scanner.mll
 parser.ml parser.mli : parser.mly
 	ocamlyacc $^
 
+moozik.out : moozik moozik.mz
+	./moozik < moozik.mz > moozik.out
+
 # Depedencies from ocamldep
 moozik.cmo : scanner.cmo parser.cmi ast.cmi
 moozik.cmx : scanner.cmx parser.cmx ast.cmi
