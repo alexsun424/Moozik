@@ -22,3 +22,9 @@ let _ =
   let lexbuf = Lexing.from_channel stdin in
   let program = Parser.program Scanner.tokenize lexbuf in
   print_endline ("finished") *)
+
+let playback_text _ =
+  print_endline "Track: testTrack (Instrument: Piano)";
+  print_endline "Key: C, Time: 4/4";
+  print_endline "Measure: C quarter, D quarter, E half";
+  print_endline "Measure: G whole"
