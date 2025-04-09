@@ -1,6 +1,5 @@
 %{open Ast %}
 
-%token NEWLINE
 %token <string>NOTE 
 %token <string>CHORD
 %token STAR
@@ -8,14 +7,22 @@
 %token <string> INSTANCE_VAR
 %token LEFT_BRAC RIGHT_BRAC 
 %token LEFT_PAREN RIGHT_PAREN 
+%token LEFT_CURLY RIGHT_CURLY
+%token <string> PARAM
 %token SEMICOLON
 %token <string> PLAYBACK_TEXT
-%token EQUALS
+%token ASSIGN
 %token NEW
-%token COMPOSITION TRACK SECTION MEASURE
+%token REPEAT
+%token <string> COMPOSITION 
+%token <string> TRACK 
+%token <string> SECTION 
+%token <string> MEASURE
+%token <int> NUMBER
 %token BEGIN END
+%token EOF
 
-%left LEFT_BRAC LEFT_PARENT
+%left LEFT_BRAC LEFT_PAREN
 %left SEMICOLON
 %right RIGHT_BRAC RIGHT_PAREN
 %right ASSIGN
@@ -27,46 +34,87 @@
 %%
 
 program:
-|expr 
-|WHILE expr
-|IF expr
+|exec_tasks_list EOF { {body=$1} }
+
+//Below is the "highest" level of the code; 
+//Expr is essentially our equivalent of a block of code
+//While loop is on a parallel level to a block of code
+
+exec_tasks_list:
+|                           { [] }
+|exec_tasks exec_tasks_list { $1 :: $2 }
+
+exec_tasks:
+|expr_list                                  { Expr($1) }
+|REPEAT LEFT_PAREN NUMBER RIGHT_PAREN body  { Repeat($3, $5) }
+
+body:
+| LEFT_CURLY expr_list RIGHT_CURLY                { Expr($2) }
+
+//Bellow is the middle level of code;
+//This represents what happens on a line by line level:
+//For us, this means mostly just variable assignments and function invocations
+
+expr_list:
+|               { [] }
+|expr SEMICOLON expr_list { $1 :: $3 }
 
 expr:
-|                                  { [] }
-|assign_to ASSIGN value expr       { ASN($1, $3) }
-|ID INSTANCE_VAR ASSIGN value expr { ASNInstVar($1, $2, $3) }
-|PLAYBACK_TEXT expr
+|ID INSTANCE_VAR parameters                    { Call(Var($1), ClassMethodLit($2), $3)} 
+|assign_to ASSIGN value                        { Asn($1, $3) }
+|ID INSTANCE_VAR ASSIGN value                  { AsnInstVar(Var($1), $2, $4) }
+|PLAYBACK_TEXT                                 { Playback($1) }
 
 assign_to:
-|class ID        { $2 } 
-|ID              { $1 } 
+|obj_class ID        { Var($2) } 
+|ID                  { Var($1) } 
 
 value:
-|NEW class LEFT_PAREN RIGHT_PAREN { $2 } 
-|BEGIN measures END               { $1 }
-|LEFT_BRAC measures RIGHT_BRAC    { $1 }
-|CHORD                            { '{' ^ $1 ^ '}' }
+|NEW obj_class                  { ObjCallNoArgs($2) :: [] } 
+|NEW obj_class parameters       { ObjCallArgs($2, $3) :: [] } 
+|BEGIN music END                { print_endline("hello5");$2 }
+|LEFT_BRAC measures RIGHT_BRAC  { Measures($2) :: [] }
+|CHORD                          { ChordLit($1) :: [] }
 
-class:
-|COMPOSITION { $1 }
-|TRACK       { $1 }
-|SECTION     { $1 }
+parameters:
+                   { [] }
+| PARAM parameters { Param($1) :: $2 }
+
+obj_class:
+|COMPOSITION { ClassLit($1) }
+|TRACK       { ClassLit($1) }
+|SECTION     { ClassLit($1) }
+|MEASURE     { ClassLit($1) }
+
+//Below is the section where the actual musical notation section is processed
+//This includes dealing with our version of literals (notes and chords)
+//Assigning even local variables for measures and grouping all elements
+//into the the correct datatype
+
+music:
+|                  { [] }
+| measures music   { print_endline("hello6"); Measures($1) :: $2} 
+| expr music       { Measures($1 :: []) :: $2 }
 
 measures:
-|                        { "" }
-| bar SEMICOLON measures { $3 ^ $1 }
+|                              { [] }
+| notes_bar SEMICOLON measures { print_endline("hello7");  Bar($1) :: $3 } 
+| var_bar SEMICOLON measures   { print_endline("hello17");Bar($1) :: $3 } 
 
-bar:
-                  { "" }              
-| nonVarLit bar   { $2 ^ $1 }                          
-| var             { $1 }                 
+notes_bar:
+                        { [] }              
+| nonVarLit notes_bar   { print_endline("hello8");  $1 :: $2 }       
 
+var_bar:
+                { [] } 
+| var var_bar   { $1 :: $2 }   
+              
 var:
 | ID { Var($1) } 
 
 nonVarLit:
-| NOTE  { $1 } 
-| CHORD { '{' ^ $1 ^ '}' }
+| NOTE  { print_endline("hello9"); NoteLit($1) } 
+| CHORD { print_endline("hello10"); ChordLit($1) }
 
 
 

@@ -1,20 +1,29 @@
 type expr = 
-|Seq of expr * expr
-|Asn of string * expr
-|AsnInstVar of string * string * expr
-|Star of string list
-|Call of expr * expr list
-|ObjCall of expr * expr
+|Asn of expr * expr list
+|AsnInstVar of expr * string * expr list
+|Call of expr * expr * expr list
+|ObjCallNoArgs of expr 
+|ObjCallArgs of expr * expr list
+|Measures of expr list
+|Bar of expr list
+|Param of string
 |Var of string
 |NoteLit of string
 |ChordLit of string
+|ClassLit of string
+|ClassMethodLit of string
+|Playback of string
 
-type block = 
+type stmt =
 |Expr of expr list
-|While of string * expr list
-|If of string * expr list
+|Repeat of int * stmt
+|If of string * stmt
 
-type program = block list
+type program = {
+    (* locals: bind list; *)
+    body: stmt list
+
+}
 
 (* module StringMap = Map.Make(String) *)
 

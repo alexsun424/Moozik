@@ -1,1 +1,14 @@
-playback("hello world");
+Composition testComp = new Composition();
+Track testTrack = new Track();
+Section testSection = new Section();
+Measure testMeasures = new Measure();
+
+testMeasures.measures = 
+	begin; 
+    e1 e1 e1 e1;
+
+
+end; 
+testSection.addMeasures(testMeasures.measures);
+testTrack.addSection(testSection);
+testComp.addTrack("testTrack", testTrack);
