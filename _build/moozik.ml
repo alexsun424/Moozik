@@ -6,7 +6,7 @@ let () =
                Track testTrack = new Track();\n\
                Section testSection = new Section();\n\
                Measure testMeasures = new Measure();\n\
-               testMeasures.measures = begin; e1; end;" in
+               testMeasures.addMeasures(e;" in
 
   let lexbuf = Lexing.from_string input in
   try

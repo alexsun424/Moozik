@@ -21,15 +21,15 @@ rule tokenize = parse
 | "Section" as sec { SECTION(sec) }
 | "Measure" as mes { MEASURE(mes) }
 | '(' { parameters lexbuf }
-| ';' { if !in_music_mode then measures lexbuf else SEMICOLON }
+| ';' { print_endline("semi");if !in_music_mode then measures lexbuf else SEMICOLON }
 | '*' ['1'-'9']+ { STAR }
-| (['0'-'9'] | ['A'-'Z'] | ['a'-'z'])+ as id {  print_endline(id); ID(id) }
+| (['0'-'9'] | ['A'-'Z'] | ['a'-'z'])+ as id {  print_endline("idk"); ID(id) }
 | eof {  print_endline("eof"); EOF }
 
 and parameters = parse
-| ')' { tokenize lexbuf }
+| ')' { print_endline("endparam");tokenize lexbuf }
 | ',' { parameters lexbuf }
-| (['0'-'9'] | ['A'-'Z'] | ['a'-'z'] | ' ')+ as param { PARAM(param) }
+| (['0'-'9'] | ['A'-'Z'] | ['a'-'z'] | ' ')+ as param { print_endline(param); PARAM(param) }
 | _ { parameters lexbuf }
 
 and repeat = parse
@@ -37,11 +37,11 @@ and repeat = parse
 | _ {tokenize lexbuf}
 
 and measures = parse
-  [' ' '\t' '\r'] { print_endline("hit"); measures lexbuf }
-| '\n' { measures lexbuf }
-| '{' {chord lexbuf}
-| '[' { LEFT_BRAC }
-| ']' { LEFT_BRAC }
+  [' ' '\t' '\r'] { measures lexbuf }
+| '\n' { print_endline("hit");measures lexbuf }
+| '{' {print_endline("hit");chord lexbuf}
+| '[' { print_endline("hit");LEFT_BRAC }
+| ']' { print_endline("hit");LEFT_BRAC }
 | ['a'-'g']+ ['1'-'9']+ ('0'|'+'|'-')* as note { print_endline(note); NOTE(note) }
 | "end" {print_endline("music end"); in_music_mode := false; END }
 | ';' {print_endline("music semi"); if !in_music_mode then SEMICOLON else tokenize lexbuf}
@@ -49,6 +49,7 @@ and measures = parse
 and chord = parse
 | '}' {measures lexbuf}
 | ['a'-'g']+ ['1'-'9']+ ('0'|'+'|'-')* as chord { CHORD(chord) }
+| _ { chord lexbuf }
 
 and instance_var = parse
 | '(' { parameters lexbuf }
@@ -61,7 +62,7 @@ and playback = parse
 
 and playback_string = parse
 | '"' {playback lexbuf}
-| (['a'-'z'] | ['0' - '9'] | " ")* as pb { PLAYBACK_TEXT(pb) }
+| (['0'-'9'] | ['A'-'Z'] | ['a'-'z'])* as pb { PLAYBACK_TEXT(pb) }
 
 (* {
     let buf = Lexing.from_channel stdin in

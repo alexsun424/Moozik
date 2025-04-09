@@ -102,12 +102,21 @@ measures:
 | var_bar SEMICOLON measures   { print_endline("hello17");Bar($1) :: $3 } 
 
 notes_bar:
-                        { [] }              
-| nonVarLit notes_bar   { print_endline("hello8");  $1 :: $2 }       
+    non_empty_notes_bar { $1 }
+  |                     { [] }
+
+non_empty_notes_bar:
+    nonVarLit non_empty_notes_bar { print_endline("hello8"); $1 :: $2 }
+  | nonVarLit                     { print_endline("hello8"); [$1] } 
+
 
 var_bar:
-                { [] } 
-| var var_bar   { $1 :: $2 }   
+    non_empty_var_bar { $1 }
+  |                   { [] }
+
+non_empty_var_bar:
+    var non_empty_var_bar { $1 :: $2 }
+  | var                   { [$1] } 
               
 var:
 | ID { Var($1) } 
