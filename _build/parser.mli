@@ -1,73 +1,130 @@
 type token =
-  | NOTE of (
-# 3 "parser.mly"
+  | ID of (
+# 5 "parser.mly"
         string
 # 6 "parser.mli"
 )
-  | CHORD of (
-# 4 "parser.mly"
-        string
+  | C_NOTE of (
+# 6 "parser.mly"
+        int
 # 11 "parser.mli"
 )
-  | STAR
-  | ID of (
+  | C_SHARP_NOTE of (
 # 6 "parser.mly"
-        string
-# 17 "parser.mli"
-)
-  | INSTANCE_VAR of (
-# 7 "parser.mly"
-        string
-# 22 "parser.mli"
-)
-  | LEFT_BRAC
-  | RIGHT_BRAC
-  | LEFT_PAREN
-  | RIGHT_PAREN
-  | LEFT_CURLY
-  | RIGHT_CURLY
-  | PARAM of (
-# 11 "parser.mly"
-        string
-# 33 "parser.mli"
-)
-  | SEMICOLON
-  | PLAYBACK_TEXT of (
-# 13 "parser.mly"
-        string
-# 39 "parser.mli"
-)
-  | ASSIGN
-  | NEW
-  | REPEAT
-  | COMPOSITION of (
-# 17 "parser.mly"
-        string
-# 47 "parser.mli"
-)
-  | TRACK of (
-# 18 "parser.mly"
-        string
-# 52 "parser.mli"
-)
-  | SECTION of (
-# 19 "parser.mly"
-        string
-# 57 "parser.mli"
-)
-  | MEASURE of (
-# 20 "parser.mly"
-        string
-# 62 "parser.mli"
-)
-  | NUMBER of (
-# 21 "parser.mly"
         int
-# 67 "parser.mli"
+# 16 "parser.mli"
 )
+  | C_FLAT_NOTE of (
+# 6 "parser.mly"
+        int
+# 21 "parser.mli"
+)
+  | D_NOTE of (
+# 7 "parser.mly"
+        int
+# 26 "parser.mli"
+)
+  | D_SHARP_NOTE of (
+# 7 "parser.mly"
+        int
+# 31 "parser.mli"
+)
+  | D_FLAT_NOTE of (
+# 7 "parser.mly"
+        int
+# 36 "parser.mli"
+)
+  | E_NOTE of (
+# 8 "parser.mly"
+        int
+# 41 "parser.mli"
+)
+  | E_SHARP_NOTE of (
+# 8 "parser.mly"
+        int
+# 46 "parser.mli"
+)
+  | E_FLAT_NOTE of (
+# 8 "parser.mly"
+        int
+# 51 "parser.mli"
+)
+  | F_NOTE of (
+# 9 "parser.mly"
+        int
+# 56 "parser.mli"
+)
+  | F_SHARP_NOTE of (
+# 9 "parser.mly"
+        int
+# 61 "parser.mli"
+)
+  | F_FLAT_NOTE of (
+# 9 "parser.mly"
+        int
+# 66 "parser.mli"
+)
+  | G_NOTE of (
+# 10 "parser.mly"
+        int
+# 71 "parser.mli"
+)
+  | G_SHARP_NOTE of (
+# 10 "parser.mly"
+        int
+# 76 "parser.mli"
+)
+  | G_FLAT_NOTE of (
+# 10 "parser.mly"
+        int
+# 81 "parser.mli"
+)
+  | A_NOTE of (
+# 11 "parser.mly"
+        int
+# 86 "parser.mli"
+)
+  | A_SHARP_NOTE of (
+# 11 "parser.mly"
+        int
+# 91 "parser.mli"
+)
+  | A_FLAT_NOTE of (
+# 11 "parser.mly"
+        int
+# 96 "parser.mli"
+)
+  | B_NOTE of (
+# 12 "parser.mly"
+        int
+# 101 "parser.mli"
+)
+  | B_SHARP_NOTE of (
+# 12 "parser.mly"
+        int
+# 106 "parser.mli"
+)
+  | B_FLAT_NOTE of (
+# 12 "parser.mly"
+        int
+# 111 "parser.mli"
+)
+  | COMPOSITION
+  | TRACK
+  | SECTION
+  | MEASURE
+  | DOT_MEASURES
+  | DOT_ADDMEASURES
+  | DOT_ADDSECTION
+  | DOT_ADDTRACK
+  | NEW
   | BEGIN
   | END
+  | ASSIGN
+  | SEMICOLON
+  | LPAREN
+  | RPAREN
   | EOF
 
-val program :
+val program_rule :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.program
