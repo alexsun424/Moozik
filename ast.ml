@@ -7,6 +7,7 @@ type pitch =
   | G | GSharp | GFlat
   | A | ASharp | AFlat
   | B | BSharp | BFlat
+  | R
 
 (* Note value (duration) *)
 type duration = int  (* 1 = quarter note, 2 = half note, 4 = whole note, etc. *)
@@ -78,7 +79,7 @@ let string_of_pitch = function
   | B -> "B"
   | BSharp -> "B#"
   | BFlat -> "Bb"
-
+  | R -> "R"
 let string_of_duration = function
   | 1 -> "quarter note"
   | 2 -> "half note"
@@ -99,6 +100,7 @@ let string_of_measures measures =
       | G | GSharp | GFlat -> "g"
       | A | ASharp | AFlat -> "a"
       | B | BSharp | BFlat -> "b"
+      | R -> "r"
     in
     let accidental = match note.pitch with
       | CSharp | DSharp | ESharp | FSharp | GSharp | ASharp | BSharp -> "+"

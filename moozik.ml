@@ -9,7 +9,7 @@ testMeasures.measures =
 	begin; 
 	c1 c+1 c-1 d1;
 	c+2 c-2;
-	e4; 
+	e4; r5;
 	end;
 testSection.addMeasures(testMeasures.measures);
 testTrack.addSection(testSection);

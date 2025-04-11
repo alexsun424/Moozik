@@ -1,4 +1,3 @@
-(* scanner.mll - Lexical analyzer for the music composition language *)
 {
 open Parser
 exception SyntaxError of string
@@ -111,6 +110,10 @@ rule token = parse
   | 'b' digit+ as note { 
       let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
       B_NOTE(dur) 
+  }
+  | 'r' digit+ as note { 
+      let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
+      R_NOTE(dur)
     }
   | id as s       { ID(s) }
   | '$'           { print_endline("$ eof"); EOF }

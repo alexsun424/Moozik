@@ -10,6 +10,7 @@
 %token <int> G_NOTE G_SHARP_NOTE G_FLAT_NOTE
 %token <int> A_NOTE A_SHARP_NOTE A_FLAT_NOTE
 %token <int> B_NOTE B_SHARP_NOTE B_FLAT_NOTE
+%token <int> R_NOTE
 %token COMPOSITION TRACK SECTION MEASURE
 %token DOT_MEASURES DOT_ADDMEASURES DOT_ADDSECTION DOT_ADDTRACK
 %token NEW BEGIN END
@@ -80,6 +81,7 @@ note:
 | B_NOTE SEMICOLON           { { pitch = B; duration = $1 } }
 | B_SHARP_NOTE SEMICOLON     { { pitch = BSharp; duration = $1 } }
 | B_FLAT_NOTE SEMICOLON      { { pitch = BFlat; duration = $1 } }
+| R_NOTE SEMICOLON           { { pitch = R; duration = $1 } }
 | C_NOTE                     { { pitch = C; duration = $1 } }
 | C_SHARP_NOTE               { { pitch = CSharp; duration = $1 } }
 | C_FLAT_NOTE                { { pitch = CFlat; duration = $1 } }
@@ -101,6 +103,7 @@ note:
 | B_NOTE                     { { pitch = B; duration = $1 } }
 | B_SHARP_NOTE               { { pitch = BSharp; duration = $1 } }
 | B_FLAT_NOTE                { { pitch = BFlat; duration = $1 } }
+| R_NOTE                     { { pitch = R; duration = $1 } }
 
 
 %%
