@@ -27,6 +27,9 @@ rule token = parse
   | ';'           { SEMICOLON }
   | '('           { LPAREN }
   | ')'           { RPAREN }
+  | '['           { LBRACKET }
+  | ']'           { RBRACKET }
+  | ','           { COMMA }
   | 'c' '+' digit+ as note { 
       let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
       C_SHARP_NOTE(dur) 

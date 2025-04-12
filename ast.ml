@@ -7,7 +7,7 @@ type pitch =
   | G | GSharp | GFlat
   | A | ASharp | AFlat
   | B | BSharp | BFlat
-  | R
+  | R  (* Rest *)
 
 (* Note value (duration) *)
 type duration = int  (* 1 = quarter note, 2 = half note, 4 = whole note, etc. *)
@@ -27,9 +27,18 @@ type note = {
 (* A sequence of notes *)
 type measures = note list
 
+(* Variable declaration in music section *)
+type var = string * measures
+
+(* Music section with variables and measures *)
+type music_section = {
+  variables: var list;
+  (* measures: measures; *)
+}
+
 (* Section contains measures *)
 type section = {
-  measures: measures;
+  measures: music_section list;
 }
 
 (* Track contains sections *)
@@ -48,7 +57,7 @@ type stmt =
   | TrackDecl of string                          (* Track testTrack; *)
   | SectionDecl of string                        (* Section testSection; *)
   | MeasureDecl of string                        (* Measure testMeasures; *)
-  | MeasuresAssign of string * measures          (* testMeasures.measures = begin; ..end; *)
+  | MeasuresAssign of string * music_section     (* testMeasures.measures = begin; ..end; *)
   | AddMeasures of string * string               (* testSection.addMeasures(testMeasures.measures); *)
   | AddSection of string * string                (* testTrack.addSection(testSection); *)
   | AddTrack of string * string                  (* testComp.addTrack(testTrack); *)
@@ -79,7 +88,8 @@ let string_of_pitch = function
   | B -> "B"
   | BSharp -> "B#"
   | BFlat -> "Bb"
-  | R -> "R"
+  | R -> "Rest"
+
 let string_of_duration = function
   | 1 -> "quarter note"
   | 2 -> "half note"
@@ -89,8 +99,10 @@ let string_of_duration = function
 let string_of_note note =
   Printf.sprintf "%s (%s)" (string_of_pitch note.pitch) (string_of_duration note.duration)
 
+let detailed_string_of_measures measures =
+  String.concat ", " (List.map string_of_note measures)
+
 let string_of_measures measures =
-  "begin;\n" ^
   String.concat " " (List.map (fun note -> 
     let base_note = match note.pitch with
       | C | CSharp | CFlat -> "c"
@@ -108,7 +120,17 @@ let string_of_measures measures =
       | _ -> ""
     in
     base_note ^ accidental ^ string_of_int note.duration
-  ) measures) ^
+  ) measures)
+
+let string_of_var (name, notes) =
+  name ^ " = [" ^ (detailed_string_of_measures notes) ^ "]"
+
+
+let string_of_music_section section =
+  "begin;\n" ^
+  String.concat "\n" (List.map string_of_var section.variables) ^
+  (if List.length section.variables > 0 then "\n" else "") ^
+  (* string_of_measures section.measures ^ *)
   "\nend;"
 
 let string_of_stmt = function
@@ -116,8 +138,8 @@ let string_of_stmt = function
   | TrackDecl id -> "Track " ^ id ^ ";"
   | SectionDecl id -> "Section " ^ id ^ ";"
   | MeasureDecl id -> "Measure " ^ id ^ ";"
-  | MeasuresAssign (id, measures) -> 
-      id ^ ".measures = " ^ string_of_measures measures
+  | MeasuresAssign (id, section) -> 
+      id ^ ".measures = " ^ string_of_music_section section
   | AddMeasures (section_id, measures_id) ->
       section_id ^ ".addMeasures(" ^ measures_id ^ ".measures);"
   | AddSection (track_id, section_id) ->

@@ -7,9 +7,8 @@ Section testSection = new Section();
 Measure testMeasures = new Measure();
 testMeasures.measures = 
 	begin; 
-	c1 c+1 c-1 d1;
-	c+2 c-2;
-	e4; r5;
+some_notes = [c+1 c-2;]
+i_see_you = [c2 c2;]
 	end;
 testSection.addMeasures(testMeasures.measures);
 testTrack.addSection(testSection);

@@ -14,11 +14,12 @@
 %token COMPOSITION TRACK SECTION MEASURE
 %token DOT_MEASURES DOT_ADDMEASURES DOT_ADDSECTION DOT_ADDTRACK
 %token NEW BEGIN END
-%token ASSIGN SEMICOLON LPAREN RPAREN
+%token ASSIGN SEMICOLON LPAREN RPAREN LBRACKET RBRACKET COMMA
 %token EOF
 
 %start program_rule
 %type <Ast.program> program_rule
+%type <Ast.music_section> music_section
 
 %%
 
@@ -40,7 +41,7 @@ stmt:
     { SectionDecl($2) }
 | MEASURE ID ASSIGN NEW MEASURE LPAREN RPAREN SEMICOLON
     { MeasureDecl($2) }
-| ID DOT_MEASURES ASSIGN BEGIN SEMICOLON note_list END SEMICOLON
+| ID DOT_MEASURES ASSIGN BEGIN SEMICOLON music_section 
     { MeasuresAssign($1, $6) }
 | ID DOT_ADDMEASURES LPAREN ID DOT_MEASURES RPAREN SEMICOLON
     { AddMeasures($1, $4) }
@@ -50,38 +51,25 @@ stmt:
     { AddTrack($1, $4) }
 
 
-// music_section:
-//   /* empty */ { [] }
-// | vdecl_list_rule measures_list_rule
+music_section:
+| vdecl_list_rule END SEMICOLON { { variables = $1;} }
 
-note_list:
+
+vdecl_list_rule:
   /* empty */ { [] }
-| note note_list { $1 :: $2 }
+| vdecl_rule vdecl_list_rule { $1 :: $2 }
+
+vdecl_rule:
+  ID ASSIGN LBRACKET bar_list_rule RBRACKET { ($1, $4) }
+
+
+bar_list_rule:
+  /* empty */ { [] }
+| note bar_list_rule { $1 :: $2 }
+| SEMICOLON bar_list_rule { $2 }
 
 
 note:
-  C_NOTE SEMICOLON           { { pitch = C; duration = $1 } }
-| C_SHARP_NOTE SEMICOLON     { { pitch = CSharp; duration = $1 } }
-| C_FLAT_NOTE SEMICOLON      { { pitch = CFlat; duration = $1 } }
-| D_NOTE SEMICOLON           { { pitch = D; duration = $1 } }
-| D_SHARP_NOTE SEMICOLON     { { pitch = DSharp; duration = $1 } }
-| D_FLAT_NOTE SEMICOLON      { { pitch = DFlat; duration = $1 } }
-| E_NOTE SEMICOLON           { { pitch = E; duration = $1 } }
-| E_SHARP_NOTE SEMICOLON     { { pitch = ESharp; duration = $1 } }
-| E_FLAT_NOTE SEMICOLON      { { pitch = EFlat; duration = $1 } }
-| F_NOTE SEMICOLON           { { pitch = F; duration = $1 } }
-| F_SHARP_NOTE SEMICOLON     { { pitch = FSharp; duration = $1 } }
-| F_FLAT_NOTE SEMICOLON      { { pitch = FFlat; duration = $1 } }
-| G_NOTE SEMICOLON           { { pitch = G; duration = $1 } }
-| G_SHARP_NOTE SEMICOLON     { { pitch = GSharp; duration = $1 } }
-| G_FLAT_NOTE SEMICOLON      { { pitch = GFlat; duration = $1 } }
-| A_NOTE SEMICOLON           { { pitch = A; duration = $1 } }
-| A_SHARP_NOTE SEMICOLON     { { pitch = ASharp; duration = $1 } }
-| A_FLAT_NOTE SEMICOLON      { { pitch = AFlat; duration = $1 } }
-| B_NOTE SEMICOLON           { { pitch = B; duration = $1 } }
-| B_SHARP_NOTE SEMICOLON     { { pitch = BSharp; duration = $1 } }
-| B_FLAT_NOTE SEMICOLON      { { pitch = BFlat; duration = $1 } }
-| R_NOTE SEMICOLON           { { pitch = R; duration = $1 } }
 | C_NOTE                     { { pitch = C; duration = $1 } }
 | C_SHARP_NOTE               { { pitch = CSharp; duration = $1 } }
 | C_FLAT_NOTE                { { pitch = CFlat; duration = $1 } }
