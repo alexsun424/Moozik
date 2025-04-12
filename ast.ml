@@ -66,42 +66,6 @@ type stmt =
 type program = stmt list
 
 (* String conversion functions *)
-let string_of_pitch = function
-  | C -> "C"
-  | CSharp -> "C#"
-  | CFlat -> "Cb"
-  | D -> "D"
-  | DSharp -> "D#"
-  | DFlat -> "Db"
-  | E -> "E"
-  | ESharp -> "E#"
-  | EFlat -> "Eb"
-  | F -> "F"
-  | FSharp -> "F#"
-  | FFlat -> "Fb"
-  | G -> "G"
-  | GSharp -> "G#"
-  | GFlat -> "Gb"
-  | A -> "A"
-  | ASharp -> "A#"
-  | AFlat -> "Ab"
-  | B -> "B"
-  | BSharp -> "B#"
-  | BFlat -> "Bb"
-  | R -> "Rest"
-
-let string_of_duration = function
-  | 1 -> "quarter note"
-  | 2 -> "half note"
-  | 4 -> "whole note"
-  | n -> string_of_int n ^ " duration"
-
-let string_of_note note =
-  Printf.sprintf "%s (%s)" (string_of_pitch note.pitch) (string_of_duration note.duration)
-
-let detailed_string_of_measures measures =
-  String.concat ", " (List.map string_of_note measures)
-
 let string_of_measures measures =
   String.concat " " (List.map (fun note -> 
     let base_note = match note.pitch with
@@ -123,7 +87,7 @@ let string_of_measures measures =
   ) measures)
 
 let string_of_var (name, notes) =
-  name ^ " = [" ^ (detailed_string_of_measures notes) ^ "]"
+  name ^ " = [" ^ (string_of_measures notes) ^ "]"
 
 
 let string_of_music_section section =
