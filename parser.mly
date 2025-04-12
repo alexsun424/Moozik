@@ -1,139 +1,97 @@
-%{open Ast %}
+%{
+  open Ast
+%}
 
-%token <string>NOTE 
-%token <string>CHORD
-%token STAR
 %token <string> ID
-%token <string> INSTANCE_VAR
-%token LEFT_BRAC RIGHT_BRAC 
-%token LEFT_PAREN RIGHT_PAREN 
-%token LEFT_CURLY RIGHT_CURLY
-%token <string> PARAM
-%token SEMICOLON
-%token <string> PLAYBACK_TEXT
-%token ASSIGN
-%token NEW
-%token REPEAT
-%token <string> COMPOSITION 
-%token <string> TRACK 
-%token <string> SECTION 
-%token <string> MEASURE
-%token <int> NUMBER
-%token BEGIN END
+%token <int> C_NOTE C_SHARP_NOTE C_FLAT_NOTE
+%token <int> D_NOTE D_SHARP_NOTE D_FLAT_NOTE
+%token <int> E_NOTE E_SHARP_NOTE E_FLAT_NOTE
+%token <int> F_NOTE F_SHARP_NOTE F_FLAT_NOTE
+%token <int> G_NOTE G_SHARP_NOTE G_FLAT_NOTE
+%token <int> A_NOTE A_SHARP_NOTE A_FLAT_NOTE
+%token <int> B_NOTE B_SHARP_NOTE B_FLAT_NOTE
+%token <int> R_NOTE
+%token COMPOSITION TRACK SECTION MEASURE
+%token DOT_MEASURES DOT_ADDMEASURES DOT_ADDSECTION DOT_ADDTRACK
+%token NEW BEGIN END
+%token ASSIGN SEMICOLON LPAREN RPAREN LBRACKET RBRACKET COMMA
 %token EOF
 
-%left LEFT_BRAC LEFT_PAREN
-%left SEMICOLON
-%right RIGHT_BRAC RIGHT_PAREN
-%right ASSIGN
-
-%start program
-%type <Ast.program> program
-
+%start program_rule
+%type <Ast.program> program_rule
+%type <Ast.music_section> music_section
 
 %%
 
-program:
-|exec_tasks_list EOF { {body=$1} }
-
-//Below is the "highest" level of the code; 
-//Expr is essentially our equivalent of a block of code
-//While loop is on a parallel level to a block of code
-
-exec_tasks_list:
-|                           { [] }
-|exec_tasks exec_tasks_list { $1 :: $2 }
-
-exec_tasks:
-|expr_list                                  { Expr($1) }
-|REPEAT LEFT_PAREN NUMBER RIGHT_PAREN body  { Repeat($3, $5) }
-
-body:
-| LEFT_CURLY expr_list RIGHT_CURLY                { Expr($2) }
-
-//Bellow is the middle level of code;
-//This represents what happens on a line by line level:
-//For us, this means mostly just variable assignments and function invocations
-
-expr_list:
-|               { [] }
-|expr SEMICOLON expr_list { $1 :: $3 }
-
-expr:
-|ID INSTANCE_VAR parameters                    { Call(Var($1), ClassMethodLit($2), $3)} 
-|assign_to ASSIGN value                        { Asn($1, $3) }
-|ID INSTANCE_VAR ASSIGN value                  { AsnInstVar(Var($1), $2, $4) }
-|PLAYBACK_TEXT                                 { Playback($1) }
-
-assign_to:
-|obj_class ID        { Var($2) } 
-|ID                  { Var($1) } 
-
-value:
-|NEW obj_class                  { ObjCallNoArgs($2) :: [] } 
-|NEW obj_class parameters       { ObjCallArgs($2, $3) :: [] } 
-|BEGIN music END                { print_endline("hello5");$2 }
-|LEFT_BRAC measures RIGHT_BRAC  { Measures($2) :: [] }
-|CHORD                          { ChordLit($1) :: [] }
-
-parameters:
-                   { [] }
-| PARAM parameters { Param($1) :: $2 }
-
-obj_class:
-|COMPOSITION { ClassLit($1) }
-|TRACK       { ClassLit($1) }
-|SECTION     { ClassLit($1) }
-|MEASURE     { ClassLit($1) }
-
-//Below is the section where the actual musical notation section is processed
-//This includes dealing with our version of literals (notes and chords)
-//Assigning even local variables for measures and grouping all elements
-//into the the correct datatype
-
-music:
-|                  { [] }
-| measures music   { print_endline("hello6"); Measures($1) :: $2} 
-| expr music       { Measures($1 :: []) :: $2 }
-
-measures:
-|                              { [] }
-| notes_bar SEMICOLON measures { print_endline("hello7");  Bar($1) :: $3 } 
-| var_bar SEMICOLON measures   { print_endline("hello17");Bar($1) :: $3 } 
-
-notes_bar:
-    non_empty_notes_bar { $1 }
-  |                     { [] }
-
-non_empty_notes_bar:
-    nonVarLit non_empty_notes_bar { print_endline("hello8"); $1 :: $2 }
-  | nonVarLit                     { print_endline("hello8"); [$1] } 
+program_rule:
+  stmts EOF { $1 }
 
 
-var_bar:
-    non_empty_var_bar { $1 }
-  |                   { [] }
-
-non_empty_var_bar:
-    var non_empty_var_bar { $1 :: $2 }
-  | var                   { [$1] } 
-              
-var:
-| ID { Var($1) } 
-
-nonVarLit:
-| NOTE  { print_endline("hello9"); NoteLit($1) } 
-| CHORD { print_endline("hello10"); ChordLit($1) }
+stmts:
+  /* empty */ { [] }
+| stmt stmts { $1 :: $2 }
 
 
+stmt:
+  COMPOSITION ID ASSIGN NEW COMPOSITION LPAREN RPAREN SEMICOLON
+    { CompDecl($2) }
+| TRACK ID ASSIGN NEW TRACK LPAREN RPAREN SEMICOLON
+    { TrackDecl($2) }
+| SECTION ID ASSIGN NEW SECTION LPAREN RPAREN SEMICOLON
+    { SectionDecl($2) }
+| MEASURE ID ASSIGN NEW MEASURE LPAREN RPAREN SEMICOLON
+    { MeasureDecl($2) }
+| ID DOT_MEASURES ASSIGN BEGIN SEMICOLON music_section 
+    { MeasuresAssign($1, $6) }
+| ID DOT_ADDMEASURES LPAREN ID DOT_MEASURES RPAREN SEMICOLON
+    { AddMeasures($1, $4) }
+| ID DOT_ADDSECTION LPAREN ID RPAREN SEMICOLON
+    { AddSection($1, $4) }
+| ID DOT_ADDTRACK LPAREN ID RPAREN SEMICOLON
+    { AddTrack($1, $4) }
 
 
+music_section:
+| vdecl_list_rule END SEMICOLON { { variables = $1;} }
 
 
+vdecl_list_rule:
+  /* empty */ { [] }
+| vdecl_rule vdecl_list_rule { $1 :: $2 }
+
+vdecl_rule:
+  ID ASSIGN LBRACKET bar_list_rule RBRACKET { ($1, $4) }
 
 
+bar_list_rule:
+  /* empty */ { [] }
+| note bar_list_rule { $1 :: $2 }
+| SEMICOLON bar_list_rule { $2 }
 
 
+note:
+| C_NOTE                     { { pitch = C; duration = $1 } }
+| C_SHARP_NOTE               { { pitch = CSharp; duration = $1 } }
+| C_FLAT_NOTE                { { pitch = CFlat; duration = $1 } }
+| D_NOTE                     { { pitch = D; duration = $1 } }
+| D_SHARP_NOTE               { { pitch = DSharp; duration = $1 } }
+| D_FLAT_NOTE                { { pitch = DFlat; duration = $1 } }
+| E_NOTE                     { { pitch = E; duration = $1 } }
+| E_SHARP_NOTE               { { pitch = ESharp; duration = $1 } }
+| E_FLAT_NOTE                { { pitch = EFlat; duration = $1 } }
+| F_NOTE                     { { pitch = F; duration = $1 } }
+| F_SHARP_NOTE               { { pitch = FSharp; duration = $1 } }
+| F_FLAT_NOTE                { { pitch = FFlat; duration = $1 } }
+| G_NOTE                     { { pitch = G; duration = $1 } }
+| G_SHARP_NOTE               { { pitch = GSharp; duration = $1 } }
+| G_FLAT_NOTE                { { pitch = GFlat; duration = $1 } }
+| A_NOTE                     { { pitch = A; duration = $1 } }
+| A_SHARP_NOTE               { { pitch = ASharp; duration = $1 } }
+| A_FLAT_NOTE                { { pitch = AFlat; duration = $1 } }
+| B_NOTE                     { { pitch = B; duration = $1 } }
+| B_SHARP_NOTE               { { pitch = BSharp; duration = $1 } }
+| B_FLAT_NOTE                { { pitch = BFlat; duration = $1 } }
+| R_NOTE                     { { pitch = R; duration = $1 } }
 
 
-
+%%
