@@ -1,5 +1,6 @@
 ## Build and run the frontend
 ```
+rm moozik.native
 ocamlbuild moozik.native
 ./moozik.native 
 ```
