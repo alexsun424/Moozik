@@ -4,6 +4,8 @@ exception SyntaxError of string
 }
 
 let digit = ['0'-'9']
+let note = (['a'-'g'] | 'r')
+let accidental = ('0'|'-'|'+')*
 let alpha = ['a'-'z' 'A'-'Z']
 let id = alpha (alpha | digit | '_')*
 let whitespace = [' ' '\t' '\r']
@@ -30,11 +32,8 @@ rule token = parse
   | '['           { LBRACKET }
   | ']'           { RBRACKET }
   | ','           { COMMA }
-  | 'c' '+' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      C_SHARP_NOTE(dur) 
-    }
-  | 'c' '-' digit+ as note { 
+  | note accidental digit as note { NOTE(note) }
+  (* | 'c' '-' digit+ as note { 
       let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
       C_FLAT_NOTE(dur) 
     }
@@ -113,11 +112,11 @@ rule token = parse
   | 'b' digit+ as note { 
       let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
       B_NOTE(dur) 
-  }
-  | 'r' digit+ as note { 
+  } *)
+  (* | 'r' digit+ as note { 
       let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
       R_NOTE(dur)
-    }
+    } *)
   | id as s       { ID(s) }
   | '$'           { print_endline("$ eof"); EOF }
   | eof			  { print_endline("eof"); EOF }

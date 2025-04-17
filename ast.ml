@@ -1,5 +1,5 @@
 (* Note pitch representation with accidentals *)
-type pitch =
+(* type pitch =
   | C | CSharp | CFlat
   | D | DSharp | DFlat
   | E | ESharp | EFlat
@@ -7,22 +7,20 @@ type pitch =
   | G | GSharp | GFlat
   | A | ASharp | AFlat
   | B | BSharp | BFlat
-  | R  (* Rest *)
+  | R  Rest *)
 
 (* Note value (duration) *)
-type duration = int  (* 1 = quarter note, 2 = half note, 4 = whole note, etc. *)
+(* type duration = int   *)
+(* 1 = quarter note, 2 = half note, 4 = whole note, etc. *)
 
 (* Accidental type *)
-type accidental = 
+(* type accidental = 
   | Sharp
   | Flat
-  | Natural
+  | Natural *)
 
 (* Note representation *)
-type note = {
-  pitch: pitch;
-  duration: duration;
-}
+type note = string
 
 (* A sequence of notes *)
 type measures = note list
@@ -33,6 +31,7 @@ type var = string * measures
 (* Music section with variables and measures *)
 type music_section = {
   variables: var list;
+  bars: measures list
   (* measures: measures; *)
 }
 
@@ -67,35 +66,21 @@ type program = stmt list
 
 (* String conversion functions *)
 let string_of_measures measures =
-  String.concat " " (List.map (fun note -> 
-    let base_note = match note.pitch with
-      | C | CSharp | CFlat -> "c"
-      | D | DSharp | DFlat -> "d"
-      | E | ESharp | EFlat -> "e"
-      | F | FSharp | FFlat -> "f"
-      | G | GSharp | GFlat -> "g"
-      | A | ASharp | AFlat -> "a"
-      | B | BSharp | BFlat -> "b"
-      | R -> "r"
-    in
-    let accidental = match note.pitch with
-      | CSharp | DSharp | ESharp | FSharp | GSharp | ASharp | BSharp -> "+"
-      | CFlat | DFlat | EFlat | FFlat | GFlat | AFlat | BFlat -> "-"
-      | _ -> ""
-    in
-    base_note ^ accidental ^ string_of_int note.duration
-  ) measures)
+  String.concat " " measures
 
 let string_of_var (name, notes) =
-  name ^ " = [" ^ (string_of_measures notes) ^ "]"
+  name ^ " = [" ^ string_of_measures notes ^ "]"
 
+(* we no longer append “;”—we just print exactly what string_of_measures gives us *)
+let string_of_bar measures =
+  string_of_measures measures
 
 let string_of_music_section section =
-  "begin;\n" ^
-  String.concat "\n" (List.map string_of_var section.variables) ^
-  (if List.length section.variables > 0 then "\n" else "") ^
-  (* string_of_measures section.measures ^ *)
-  "\nend;"
+  "begin;\n"
+  ^ String.concat "\n" (List.map string_of_var section.variables)
+  ^ (if section.variables <> [] then "\n" else "")
+  ^ String.concat "\n" (List.map string_of_bar section.bars)
+  ^ "\nend;"
 
 let string_of_stmt = function
   | CompDecl id -> "Composition " ^ id ^ ";"
