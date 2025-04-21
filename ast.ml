@@ -30,9 +30,8 @@ type var = string * measures
 
 (* Music section with variables and measures *)
 type music_section = {
-  variables: var list;
-  bars: measures list
-  (* measures: measures; *)
+  variables : (string * string list) list;
+  bars : string list list;
 }
 
 (* Section contains measures *)
@@ -60,6 +59,9 @@ type stmt =
   | AddMeasures of string * string               (* testSection.addMeasures(testMeasures.measures); *)
   | AddSection of string * string                (* testTrack.addSection(testSection); *)
   | AddTrack of string * string                  (* testComp.addTrack(testTrack); *)
+  | RepeatLoop of int * music_section         (* repeat(n) { ... } *)
+  | ForLoop of string * int * int * music_section
+
 
 (* Program is a list of statements *)
 type program = stmt list
@@ -95,6 +97,14 @@ let string_of_stmt = function
       track_id ^ ".addSection(" ^ section_id ^ ");"
   | AddTrack (comp_id, track_id) ->
       comp_id ^ ".addTrack(" ^ track_id ^ ");"
+  | RepeatLoop (n, body) ->
+      "repeat(" ^ string_of_int n ^ ") {\n" ^
+      string_of_music_section body ^ "\n}"
+  | ForLoop (id, start_val, end_val, body) ->
+      "for (int " ^ id ^ " = " ^ string_of_int start_val ^
+      "; " ^ id ^ " < " ^ string_of_int end_val ^
+      "; " ^ id ^ "++) {\n" ^
+      string_of_music_section body ^ "\n}"
 
 let string_of_program stmts =
   "\n\nParsed program: \n\n" ^

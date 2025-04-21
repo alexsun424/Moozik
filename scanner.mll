@@ -3,7 +3,7 @@ open Parser
 exception SyntaxError of string
 }
 
-let digit = ['0'-'9']
+let digit = ['0'-'9']+
 let note = (['a'-'g'] | 'r')
 let accidental = ('0'|'-'|'+')*
 let alpha = ['a'-'z' 'A'-'Z']
@@ -12,112 +12,59 @@ let whitespace = [' ' '\t' '\r']
 let newline = '\n'
 
 rule token = parse
-  | whitespace    { token lexbuf }
-  | newline       { Lexing.new_line lexbuf; token lexbuf }
-  | "Composition" { COMPOSITION }
-  | "Track"       { TRACK }
-  | "Section"     { SECTION }
-  | "Measure"     { MEASURE }
-  | ".measures"   { DOT_MEASURES }
-  | ".addMeasures"{ DOT_ADDMEASURES }
-  | ".addSection" { DOT_ADDSECTION }
-  | ".addTrack"   { DOT_ADDTRACK }
-  | "new"         { NEW }
-  | "begin"       { BEGIN }
-  | "end"         { END }
-  | '='           { ASSIGN }
-  | ';'           { SEMICOLON }
-  | '('           { LPAREN }
-  | ')'           { RPAREN }
-  | '['           { LBRACKET }
-  | ']'           { RBRACKET }
-  | ','           { COMMA }
-  | note accidental digit as note { NOTE(note) }
-  (* | 'c' '-' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      C_FLAT_NOTE(dur) 
-    }
-  | 'c' digit+ as note { 
-      let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
-      C_NOTE(dur) 
-    }
-  | 'd' '+' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      D_SHARP_NOTE(dur) 
-    }
-  | 'd' '-' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      D_FLAT_NOTE(dur) 
-    }
-  | 'd' digit+ as note { 
-      let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
-      D_NOTE(dur) 
-    }
-  | 'e' '+' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      E_SHARP_NOTE(dur) 
-    }
-  | 'e' '-' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      E_FLAT_NOTE(dur) 
-    }
-  | 'e' digit+ as note { 
-      let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
-      E_NOTE(dur) 
-    }
-  | 'f' '+' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      F_SHARP_NOTE(dur) 
-    }
-  | 'f' '-' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      F_FLAT_NOTE(dur) 
-    }
-  | 'f' digit+ as note { 
-      let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
-      F_NOTE(dur) 
-    }
-  | 'g' '+' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      G_SHARP_NOTE(dur) 
-    }
-  | 'g' '-' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      G_FLAT_NOTE(dur) 
-    }
-  | 'g' digit+ as note { 
-      let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
-      G_NOTE(dur) 
-    }
-  | 'a' '+' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      A_SHARP_NOTE(dur) 
-    }
-  | 'a' '-' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      A_FLAT_NOTE(dur) 
-    }
-  | 'a' digit+ as note { 
-      let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
-      A_NOTE(dur) 
-    }
-  | 'b' '+' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      B_SHARP_NOTE(dur) 
-    }
-  | 'b' '-' digit+ as note { 
-      let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
-      B_FLAT_NOTE(dur) 
-    }
-  | 'b' digit+ as note { 
-      let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
-      B_NOTE(dur) 
-  } *)
-  (* | 'r' digit+ as note { 
-      let dur = int_of_string (String.sub note 1 ((String.length note) - 1)) in
-      R_NOTE(dur)
-    } *)
-  | id as s       { ID(s) }
-  | '$'           { print_endline("$ eof"); EOF }
-  | eof			  { print_endline("eof"); EOF }
-  | _ as char     { raise (SyntaxError ("Unexpected character: " ^ Char.escaped char)) }
+  | [' ' '\t' '\r'] {
+    print_endline "SKIP → WHITESPACE";
+    token lexbuf
+  }
+  | '\n' {
+      print_endline "SKIP → NEWLINE";
+      Lexing.new_line lexbuf;
+      token lexbuf
+  }
+
+  | "Composition"      { print_endline "LEX → COMPOSITION"; COMPOSITION }
+  | "Track"            { print_endline "LEX → TRACK"; TRACK }
+  | "Section"          { print_endline "LEX → SECTION"; SECTION }
+  | "Measure"          { print_endline "LEX → MEASURE"; MEASURE }
+
+  | ".measures"        { print_endline "LEX → DOT_MEASURES"; DOT_MEASURES }
+  | ".addMeasures"     { print_endline "LEX → DOT_ADDMEASURES"; DOT_ADDMEASURES }
+  | ".addSection"      { print_endline "LEX → DOT_ADDSECTION"; DOT_ADDSECTION }
+  | ".addTrack"        { print_endline "LEX → DOT_ADDTRACK"; DOT_ADDTRACK }
+
+  | "new"              { print_endline "LEX → NEW"; NEW }
+  | "begin"            { print_endline "LEX → BEGIN"; BEGIN }
+  | "end"              { print_endline "LEX → END"; END }
+  | "repeat"           { print_endline "LEX → REPEAT"; REPEAT }
+  | "for"              { print_endline "LEX → FOR"; FOR }
+  | "int"              { print_endline "LEX → INT_KW"; INT_KW }
+
+  | '='                { print_endline "LEX → ASSIGN"; ASSIGN }
+  | ';'                { print_endline "LEX → SEMICOLON"; SEMICOLON }
+  | '('                { print_endline "LEX → LPAREN"; LPAREN }
+  | ')'                { print_endline "LEX → RPAREN"; RPAREN }
+  | '['                { print_endline "LEX → LBRACKET"; LBRACKET }
+  | ']'                { print_endline "LEX → RBRACKET"; RBRACKET }
+  | ','                { print_endline "LEX → COMMA"; COMMA }
+  | '{'                { print_endline "LEX → LBRACE"; LBRACE }
+  | '}'                { print_endline "LEX → RBRACE"; RBRACE }
+
+  | "<"                { print_endline "LEX → LT"; LT }
+  | "++"               { print_endline "LEX → INCR"; INCR }
+
+  | digit+ as n        { print_endline ("LEX → INT(" ^ n ^ ")"); INT(int_of_string n) }
+  | id as s            { print_endline ("LEX → ID(" ^ s ^ ")"); ID(s) }
+  (*
+  | note accidental digit as note {
+    print_endline ("LEX → NOTE(" ^ note ^ ")");
+    NOTE(note)
+  }
+  *)
+  | eof                { print_endline "LEX → EOF"; EOF }
+
+  | _ as c {
+    Printf.printf "CHAR CHECK → %c (code %d)\n" c (Char.code c);
+    flush stdout;
+    raise (SyntaxError ("CRASH CHAR: " ^ Char.escaped c))
+  }
+
