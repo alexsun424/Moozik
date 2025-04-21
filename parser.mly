@@ -15,11 +15,23 @@
 %token DOT_MEASURES DOT_ADDMEASURES DOT_ADDSECTION DOT_ADDTRACK
 %token NEW BEGIN END
 %token ASSIGN SEMICOLON LPAREN RPAREN LBRACKET RBRACKET COMMA
+%token LBRACE RBRACE
 %token EOF
-
+%token REPEAT FOR
+%token LT INCR
+%token INT_KW
+%token <int> INT
 %start program_rule
 %type <Ast.program> program_rule
+%type <Ast.music_section> music_stmts
+%type <Ast.music_section> loop_block
 %type <Ast.music_section> music_section
+%type <Ast.stmt list> stmts
+%type <Ast.stmt> stmt
+%type <string list> var_ref_rule
+%type <string * string list> vdecl_rule
+%type <string list> bar_rule
+%type <string list> note_list
 
 %%
 
@@ -49,8 +61,19 @@ stmt:
     { AddSection($1, $4) }
 | ID DOT_ADDTRACK LPAREN ID RPAREN SEMICOLON
     { AddTrack($1, $4) }
+| REPEAT LPAREN INT RPAREN music_stmts END SEMICOLON
+    { RepeatLoop($3, $5) } 
+| FOR LPAREN INT_KW ID ASSIGN INT SEMICOLON ID LT INT SEMICOLON ID INCR RPAREN
+    loop_block
+    {
+      ForLoop($4, $6, $10, $15)
+    }
+
 
 music_section:
+| loop_block { $1 }
+
+loop_block:
 | music_stmts END SEMICOLON { $1 }
 
 music_stmts:

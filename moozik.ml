@@ -1,23 +1,50 @@
-open Ast
+open Parser
+open Lexing
 
-let _ =
-  let input = "Composition testComp = new Composition();
-Track testTrack = new Track();
-Section testSection = new Section();
-Measure testMeasures = new Measure();
-testMeasures.measures = 
-	begin; 
-  e1 e1 e1 e1;
-some_notes = [c+1 c-2;]
-e1 e1 e1 e1;
-i_see_you = [c2 c2;]
-e1 e1 e1 e1;
-e2 e2 e2 e2;
-some_notes
-	end;
-testSection.addMeasures(testMeasures.measures);
-testTrack.addSection(testSection);
-testComp.addTrack(testTrack); $" in
-  let lexbuf = Lexing.from_string  input in
-  let program = Parser.program_rule Scanner.token lexbuf in
-  print_endline (string_of_program program)
+(* Print every token with the exact lexeme seen *)
+let rec dump_tokens lexbuf =
+  try
+    let token = Scanner.token lexbuf in
+    Printf.printf "TOKEN: %-20s | LEXEME: %s\n"
+      (Obj.magic token : string)  (* Debug trick — don't do this in prod *)
+      (Lexing.lexeme lexbuf);
+    if token = Parser.EOF then print_endline "EOF reached"
+    else dump_tokens lexbuf
+  with
+  | Scanner.SyntaxError msg ->
+      Printf.eprintf "Lexer error at offset %d: %s\n"
+        (Lexing.lexeme_start lexbuf) msg
+  | Parsing.Parse_error ->
+      Printf.eprintf "Parser error at offset %d\n" (Lexing.lexeme_start lexbuf)
+
+let () =
+  print_endline "RUNNING MOOZIK...";
+
+  let source = 
+    "Composition testComp = new Composition();\n" ^
+    "repeat(2) { begin; c1 c1; end; }\n" ^
+    "for (int i = 0; i < 3; i++) { begin; d1 d1; end; }\n" ^
+    "Track testTrack = new Track();\n" ^
+    "Section testSection = new Section();\n" ^
+    "Measure testMeasures = new Measure();\n" ^
+    "testMeasures.measures = \n" ^
+    "  begin;\n" ^
+    "  e1 e1 e1 e1;\n" ^
+    "  some_notes = [c+1 c-2;]\n" ^
+    "  e1 e1 e1 e1;\n" ^
+    "  i_see_you = [c2 c2;]\n" ^
+    "  e1 e1 e1 e1;\n" ^
+    "  e2 e2 e2 e2;\n" ^
+    "  some_notes\n" ^
+    "  end;\n" ^
+    "testSection.addMeasures(testMeasures.measures);\n" ^
+    "testTrack.addSection(testSection);\n" ^
+    "testComp.addTrack(testTrack);"
+  in
+
+  print_endline "----- INPUT START -----";
+  print_endline source;
+  print_endline "-----  INPUT END  -----\n";
+
+  let lexbuf = Lexing.from_string source in
+  dump_tokens lexbuf
