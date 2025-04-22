@@ -18,10 +18,6 @@ rule token = parse
   | "Track"       { TRACK }
   | "Section"     { SECTION }
   | "Measure"     { MEASURE }
-  | ".measures"   { DOT_MEASURES }
-  | ".addMeasures"{ DOT_ADDMEASURES }
-  | ".addSection" { DOT_ADDSECTION }
-  | ".addTrack"   { DOT_ADDTRACK }
   | "new"         { NEW }
   | "begin"       { BEGIN }
   | "end"         { END }
@@ -32,6 +28,7 @@ rule token = parse
   | '['           { LBRACKET }
   | ']'           { RBRACKET }
   | ','           { COMMA }
+  | '.'           { DOT }
   | note accidental digit as note { NOTE(note) }
   (* | 'c' '-' digit+ as note { 
       let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in

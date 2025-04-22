@@ -50,6 +50,10 @@ type composition = {
   tracks: track list;
 }
 
+type expr =
+ | Ident   of string
+ | Member  of expr * string
+
 (* Statement types for our language *)
 type stmt =
   | CompDecl of string                           (* Composition testComp; *)
@@ -95,6 +99,35 @@ let string_of_stmt = function
       track_id ^ ".addSection(" ^ section_id ^ ");"
   | AddTrack (comp_id, track_id) ->
       comp_id ^ ".addTrack(" ^ track_id ^ ");"
+
+(* Utility to pull an identifier out of an expr of the form Var or Member(Var, _) *)
+let extract_id_of_expr = function
+ | Ident s -> s
+ | Member (Ident s, _) -> s
+ | _ -> failwith "Expected simple Ident or Member"
+
+ let find_function receiver_name method_name arg_expr =
+  (* get just the ID of the argument to pass into the stmt *)
+  let arg_id = extract_id_of_expr arg_expr in
+    match method_name with
+      | "addMeasures" ->
+          (* e.g. testSection.addMeasures(testMeasures.measures) *)
+          let measures_id = arg_id in
+          AddMeasures (receiver_name, measures_id)
+ 
+ 
+      | "addSection" ->
+          let section_id = arg_id in
+          AddSection (receiver_name, section_id)
+ 
+ 
+      | "addTrack" ->
+          let track_id = arg_id in
+          AddTrack (receiver_name, track_id)
+ 
+ 
+      | other ->
+          failwith ("Unknown method name in FindFunction: " ^ other) 
 
 let string_of_program stmts =
   "\n\nParsed program: \n\n" ^
