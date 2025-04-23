@@ -4,6 +4,7 @@
 
 %token <string> ID
 %token <string> NOTE
+%token <int> INT  
 // %token <int> D_NOTE D_SHARP_NOTE D_FLAT_NOTE
 // %token <int> E_NOTE E_SHARP_NOTE E_FLAT_NOTE
 // %token <int> F_NOTE F_SHARP_NOTE F_FLAT_NOTE
@@ -35,6 +36,7 @@ stmts:
 
 expr:
  | ID                { Ident $1 }
+ | INT               { IntLit $1 }
  | ID DOT ID         { Member (Ident $1, $3) }
 
 stmt:

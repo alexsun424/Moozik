@@ -17,7 +17,8 @@ some_notes
 	end;
 testSection.addMeasures(testMeasures.measures);
 testTrack.addSection(testSection);
-testComp.addTrack(testTrack); $" in
+testComp.addTrack(testTrack);
+testSection.setKey(100); $" in
   let lexbuf = Lexing.from_string  input in
   let program = Parser.program_rule Scanner.token lexbuf in
   print_endline (string_of_program program)
