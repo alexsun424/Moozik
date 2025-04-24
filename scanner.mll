@@ -10,6 +10,8 @@ let alpha = ['a'-'z' 'A'-'Z']
 let id = alpha (alpha | digit | '_')*
 let whitespace = [' ' '\t' '\r']
 let newline = '\n'
+let int = digit+
+
 
 rule token = parse
   | whitespace    { token lexbuf }
@@ -18,10 +20,6 @@ rule token = parse
   | "Track"       { TRACK }
   | "Section"     { SECTION }
   | "Measure"     { MEASURE }
-  | ".measures"   { DOT_MEASURES }
-  | ".addMeasures"{ DOT_ADDMEASURES }
-  | ".addSection" { DOT_ADDSECTION }
-  | ".addTrack"   { DOT_ADDTRACK }
   | "new"         { NEW }
   | "begin"       { BEGIN }
   | "end"         { END }
@@ -32,6 +30,8 @@ rule token = parse
   | '['           { LBRACKET }
   | ']'           { RBRACKET }
   | ','           { COMMA }
+  | '.'           { DOT }
+  | int as num    { INT(int_of_string num) } 
   | note accidental digit as note { NOTE(note) }
   (* | 'c' '-' digit+ as note { 
       let dur = int_of_string (String.sub note 2 ((String.length note) - 2)) in
@@ -119,5 +119,5 @@ rule token = parse
     } *)
   | id as s       { ID(s) }
   | '$'           { print_endline("$ eof"); EOF }
-  | eof			  { print_endline("eof"); EOF }
+  | eof			      { print_endline("eof"); EOF }
   | _ as char     { raise (SyntaxError ("Unexpected character: " ^ Char.escaped char)) }

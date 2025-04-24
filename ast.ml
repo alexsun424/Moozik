@@ -50,6 +50,11 @@ type composition = {
   tracks: track list;
 }
 
+type expr =
+ | Ident   of string
+ | Member  of expr * string
+ | IntLit  of int 
+
 (* Statement types for our language *)
 type stmt =
   | CompDecl of string                           (* Composition testComp; *)
@@ -60,6 +65,7 @@ type stmt =
   | AddMeasures of string * string               (* testSection.addMeasures(testMeasures.measures); *)
   | AddSection of string * string                (* testTrack.addSection(testSection); *)
   | AddTrack of string * string                  (* testComp.addTrack(testTrack); *)
+  | SetKey of string * int                    (* testSection.setKey(100); *)
 
 (* Program is a list of statements *)
 type program = stmt list
@@ -95,6 +101,46 @@ let string_of_stmt = function
       track_id ^ ".addSection(" ^ section_id ^ ");"
   | AddTrack (comp_id, track_id) ->
       comp_id ^ ".addTrack(" ^ track_id ^ ");"
+  | SetKey (section_id, key) ->
+      section_id ^ ".setKey(" ^ string_of_int key ^ ");"
+
+(* Utility to pull an identifier out of an expr of the form Var or Member(Var, _) *)
+let extract_id_of_expr = function
+ | Ident s -> s
+ | Member (Ident s, _) -> s
+ | IntLit i -> string_of_int i 
+ | _ -> failwith "Expected simple Ident, Member, or IntLit"
+
+ let find_function receiver_name method_name arg_expr =
+  (* get just the ID of the argument to pass into the stmt *)
+  let arg_id = extract_id_of_expr arg_expr in
+    match method_name with
+      | "addMeasures" ->
+          (* e.g. testSection.addMeasures(testMeasures.measures) *)
+          let measures_id = arg_id in
+          AddMeasures (receiver_name, measures_id)
+ 
+ 
+      | "addSection" ->
+          let section_id = arg_id in
+          AddSection (receiver_name, section_id)
+ 
+ 
+      | "addTrack" ->
+          let track_id = arg_id in
+          AddTrack (receiver_name, track_id)
+      
+      | "setKey" ->
+        let key_value = match arg_expr with
+          | IntLit i -> i
+          | _ -> failwith "setKey expects an integer argument"
+          in
+          let () = Printf.printf "Parsed SetKey: %s -> %d\n%!"
+            receiver_name key_value in
+              SetKey (receiver_name, key_value)
+ 
+      | other ->
+          failwith ("Unknown method name in FindFunction: " ^ other) 
 
 let string_of_program stmts =
   "\n\nParsed program: \n\n" ^
