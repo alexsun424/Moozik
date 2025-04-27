@@ -1,24 +1,3 @@
-(* Note pitch representation with accidentals *)
-(* type pitch =
-  | C | CSharp | CFlat
-  | D | DSharp | DFlat
-  | E | ESharp | EFlat
-  | F | FSharp | FFlat
-  | G | GSharp | GFlat
-  | A | ASharp | AFlat
-  | B | BSharp | BFlat
-  | R  Rest *)
-
-(* Note value (duration) *)
-(* type duration = int   *)
-(* 1 = quarter note, 2 = half note, 4 = whole note, etc. *)
-
-(* Accidental type *)
-(* type accidental = 
-  | Sharp
-  | Flat
-  | Natural *)
-
 (* Note representation *)
 type note = string
 
@@ -28,11 +7,22 @@ type measures = note list
 (* Variable declaration in music section *)
 type var = string * measures
 
+(* Music items can be variables (ref), measures, or repeat blocks *)
+type music_item = 
+  | Notes of measures
+  | VarRef of string
+  | Repeat of repeat_expr
+
+  (* Repeat expression *)
+and repeat_expr = {
+  count: int;
+  body: music_item list;
+}
+
 (* Music section with variables and measures *)
 type music_section = {
   variables: var list;
-  bars: measures list
-  (* measures: measures; *)
+  bars: music_item list
 }
 
 (* Section contains measures *)
@@ -81,11 +71,19 @@ let string_of_var (name, notes) =
 let string_of_bar measures =
   string_of_measures measures
 
+let rec string_of_music_item = function
+  | Notes measures -> string_of_measures measures
+  | VarRef var_name -> var_name
+  | Repeat repeat_expr -> 
+      "repeat(" ^ string_of_int repeat_expr.count ^ "){\n\t" ^ 
+      String.concat "\n\t" (List.map string_of_music_item repeat_expr.body) ^
+      "\n}"
+
 let string_of_music_section section =
   "begin;\n"
   ^ String.concat "\n" (List.map string_of_var section.variables)
   ^ (if section.variables <> [] then "\n" else "")
-  ^ String.concat "\n" (List.map string_of_bar section.bars)
+  ^ String.concat "\n" (List.map string_of_music_item section.bars)
   ^ "\nend;"
 
 let string_of_stmt = function

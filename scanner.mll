@@ -23,12 +23,15 @@ rule token = parse
   | "new"         { NEW }
   | "begin"       { BEGIN }
   | "end"         { END }
+  | "repeat"      { REPEAT }
   | '='           { ASSIGN }
   | ';'           { SEMICOLON }
   | '('           { LPAREN }
   | ')'           { RPAREN }
   | '['           { LBRACKET }
   | ']'           { RBRACKET }
+  | '{'           { LBRACE }
+  | '}'           { RBRACE }
   | ','           { COMMA }
   | '.'           { DOT }
   | int as num    { INT(int_of_string num) } 

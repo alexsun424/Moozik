@@ -5,17 +5,11 @@
 %token <string> ID
 %token <string> NOTE
 %token <int> INT  
-// %token <int> D_NOTE D_SHARP_NOTE D_FLAT_NOTE
-// %token <int> E_NOTE E_SHARP_NOTE E_FLAT_NOTE
-// %token <int> F_NOTE F_SHARP_NOTE F_FLAT_NOTE
-// %token <int> G_NOTE G_SHARP_NOTE G_FLAT_NOTE
-// %token <int> A_NOTE A_SHARP_NOTE A_FLAT_NOTE
-// %token <int> B_NOTE B_SHARP_NOTE B_FLAT_NOTE
 %token <int> R_NOTE
 %token COMPOSITION TRACK SECTION MEASURE
 %token DOT
-%token NEW BEGIN END
-%token ASSIGN SEMICOLON LPAREN RPAREN LBRACKET RBRACKET COMMA
+%token NEW BEGIN END REPEAT
+%token ASSIGN SEMICOLON LPAREN RPAREN LBRACKET RBRACKET COMMA LBRACE RBRACE
 %token EOF
 
 %start program_rule
@@ -60,14 +54,31 @@ music_section:
 music_stmts:
     /* empty */                     { { variables = []; bars = [] } }
   | music_stmts vdecl_rule          { { variables = $1.variables @ [ $2 ]; bars = $1.bars } }
-  | music_stmts bar_rule            { { variables = $1.variables; bars = $1.bars @ [ $2 ] } }
-  | music_stmts var_ref_rule        { { variables = $1.variables; bars = $1.bars @ [ $2 ] } }
-
-var_ref_rule:
- ID { [$1] }
+  | music_stmts music_item          { { variables = $1.variables; bars = $1.bars @ [ $2 ] } }
 
 vdecl_rule:
   ID ASSIGN LBRACKET bar_rule RBRACKET { ($1, $4) }
+
+music_item:
+  | bar_rule                { Notes($1) }
+  | var_ref_rule            { VarRef($1) } 
+  | repeat_rule             { Repeat($1) }
+
+ repeat_rule:
+  | REPEAT LPAREN INT RPAREN LBRACE music_item_list RBRACE 
+      { { count = $3; body = $6 } }
+  | error { 
+      Printf.eprintf "Error parsing repeat expression\n"; 
+      flush stderr;
+      { count = 0; body = [] } 
+    }
+
+music_item_list:
+  | /* empty */             { [] }
+  | music_item music_item_list  { $1 :: $2 }
+
+var_ref_rule:
+| ID { $1 }
 
 bar_rule:
 | note_list SEMICOLON { $1 }
