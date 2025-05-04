@@ -1,7 +1,9 @@
 open Ast
+open Sast
+open Semant
 
 let _ =
-  let input = "Composition testComp = new Composition();
+  let input = "Composition  testComp = new Composition();
 Track testTrack = new Track();
 Track testTrack2 = new Track();
 Section testSection = new Section();
@@ -43,4 +45,5 @@ testComp.addTrack(testTrack2);
 testSection.setKey(100); $" in
   let lexbuf = Lexing.from_string  input in
   let program = Parser.program_rule Scanner.token lexbuf in
-  print_endline (string_of_program program)
+  print_endline (string_of_program program);
+  print_endline (string_of_sprogram (check program))
