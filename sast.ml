@@ -30,6 +30,7 @@ type sstmt =
   | SAddSection of string * string                 (* testTrack.addSection(testSection); *)
   | SAddTrack of string * string                   (* testComp.addTrack(testTrack); *)
   | SSetKey of string * int                        (* testSection.setKey(100); *)
+  | SSetInstrument of string * string              (* testTrack.setInstrument(piano); *)
 
 (* Semantically-checked program *)
 type sprogram = sstmt list
@@ -68,6 +69,8 @@ let string_of_sstmt = function
       comp_id ^ ".addTrack(" ^ track_id ^ ");"
   | SSetKey (section_id, key) ->
       section_id ^ ".setKey(" ^ string_of_int key ^ ");"
+  | SSetInstrument (track_id, instrument) ->
+      track_id ^ ".setInstrument(" ^ instrument ^ ");"  
 
 let string_of_sprogram sstmts =
   "\n\nSemantically checked program: \n\n" ^

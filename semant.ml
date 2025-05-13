@@ -31,6 +31,12 @@ let check program =
           }
   in
 
+  let instruments =
+    List.fold_left (fun map name -> StringMap.add name true map)
+      StringMap.empty
+      ["piano"; "violin"; "flute"; "guitar"; "drums"] 
+  in
+  
   (* Convert a music_section to a semantically checked smusic_section *)
   let check_music_section ms =
     (* Check for duplicate variable names *)
@@ -51,7 +57,7 @@ let check program =
   in
 
   (* Build a map of declared variables *)
-  let rec check_stmts (compositions, tracks, sections, measures) = function
+  let rec check_stmts (compositions, tracks, sections, measures, instruments) = function
     | [] -> []
     | stmt :: rest ->
         match stmt with
@@ -61,7 +67,7 @@ let check program =
             then raise (Failure ("duplicate composition " ^ id))
             else 
               let compositions' = StringMap.add id true compositions in
-              SCompDecl id :: check_stmts (compositions', tracks, sections, measures) rest
+              SCompDecl id :: check_stmts (compositions', tracks, sections, measures, instruments) rest
               
         | TrackDecl id ->
             (* Check if track already declared *)
@@ -69,7 +75,7 @@ let check program =
             then raise (Failure ("duplicate track " ^ id))
             else 
               let tracks' = StringMap.add id true tracks in
-              STrackDecl id :: check_stmts (compositions, tracks', sections, measures) rest
+              STrackDecl id :: check_stmts (compositions, tracks', sections, measures, instruments) rest
               
         | SectionDecl id ->
             (* Check if section already declared *)
@@ -77,7 +83,7 @@ let check program =
             then raise (Failure ("duplicate section " ^ id))
             else 
               let sections' = StringMap.add id true sections in
-              SSectionDecl id :: check_stmts (compositions, tracks, sections', measures) rest
+              SSectionDecl id :: check_stmts (compositions, tracks, sections', measures, instruments) rest
               
         | MeasureDecl id ->
             (* Check if measure already declared *)
@@ -85,7 +91,7 @@ let check program =
             then raise (Failure ("duplicate measure " ^ id))
             else 
               let measures' = StringMap.add id true measures in
-              SMeasureDecl id :: check_stmts (compositions, tracks, sections, measures') rest
+              SMeasureDecl id :: check_stmts (compositions, tracks, sections, measures', instruments) rest
               
         | MeasuresAssign (id, section) ->
             (* Check if measure exists *)
@@ -94,7 +100,7 @@ let check program =
             else
               (* Semantically check the music section *)
               let checked_section = check_music_section section in
-              SMeasuresAssign (id, checked_section) :: check_stmts (compositions, tracks, sections, measures) rest
+              SMeasuresAssign (id, checked_section) :: check_stmts (compositions, tracks, sections, measures, instruments) rest
               
         | AddMeasures (section_id, measures_id) ->
             (* Check if section exists *)
@@ -104,7 +110,7 @@ let check program =
             else if not (StringMap.mem measures_id measures)
             then raise (Failure ("undeclared measure " ^ measures_id))
             else
-              SAddMeasures (section_id, measures_id) :: check_stmts (compositions, tracks, sections, measures) rest
+              SAddMeasures (section_id, measures_id) :: check_stmts (compositions, tracks, sections, measures, instruments) rest
               
         | AddSection (track_id, section_id) ->
             (* Check if track exists *)
@@ -114,7 +120,7 @@ let check program =
             else if not (StringMap.mem section_id sections)
             then raise (Failure ("AddSection: undeclared section " ^ section_id))
             else
-              SAddSection (track_id, section_id) :: check_stmts (compositions, tracks, sections, measures) rest
+              SAddSection (track_id, section_id) :: check_stmts (compositions, tracks, sections, measures, instruments) rest
               
         | AddTrack (comp_id, track_id) ->
             (* Check if composition exists *)
@@ -124,7 +130,7 @@ let check program =
             else if not (StringMap.mem track_id tracks)
             then raise (Failure ("undeclared track " ^ track_id))
             else
-              SAddTrack (comp_id, track_id) :: check_stmts (compositions, tracks, sections, measures) rest
+              SAddTrack (comp_id, track_id) :: check_stmts (compositions, tracks, sections, measures, instruments) rest
               
         | SetKey (section_id, key) ->
             (* Check if section exists *)
@@ -134,8 +140,19 @@ let check program =
             else if key < 0 || key > 127 (* MIDI note range is 0-127 *)
             then raise (Failure ("invalid key value " ^ string_of_int key))
             else
-              SSetKey (section_id, key) :: check_stmts (compositions, tracks, sections, measures) rest
+              SSetKey (section_id, key) :: check_stmts (compositions, tracks, sections, measures, instruments) rest
+
+        | SetInstrument (track_id, instrument) ->
+              (* Check if track exists *)
+              if not (StringMap.mem track_id tracks) 
+              then raise (Failure ("SetInstrument: undeclared track " ^ track_id))
+              (* Check if instrument is valid *)
+              else if not (StringMap.mem instrument instruments)
+              then raise (Failure ("SetInstrument: invalid instrument " ^ instrument))
+              else
+                SSetInstrument (track_id, instrument) :: check_stmts (compositions, tracks, sections, measures, instruments) rest
+            
   in
 
   (* Start the checking with empty environment maps *)
-  check_stmts (compositions, tracks, sections, measures) program 
+  check_stmts (compositions, tracks, sections, measures, instruments) program 

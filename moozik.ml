@@ -40,6 +40,7 @@ repeat(2) {
 testSection.addMeasures(testMeasures.measures);
 testTrack.addSection(testSection);
 testTrack.addSection(testSection2);
+testTrack.setInstrument(piano);
 testComp.addTrack(testTrack);
 testComp.addTrack(testTrack2);
 testSection.setKey(100); $" in
@@ -47,3 +48,6 @@ testSection.setKey(100); $" in
   let program = Parser.program_rule Scanner.token lexbuf in
   print_endline (string_of_program program);
   print_endline (string_of_sprogram (check program))
+
+  (* 
+testSection.setTiming(4.4); *)

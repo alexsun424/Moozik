@@ -55,7 +55,8 @@ type stmt =
   | AddMeasures of string * string               (* testSection.addMeasures(testMeasures.measures); *)
   | AddSection of string * string                (* testTrack.addSection(testSection); *)
   | AddTrack of string * string                  (* testComp.addTrack(testTrack); *)
-  | SetKey of string * int                    (* testSection.setKey(100); *)
+  | SetKey of string * int                       (* testSection.setKey(100); *)
+  | SetInstrument of string * string             (* testTrack.setInstrument(piano); *)
 
 (* Program is a list of statements *)
 type program = stmt list
@@ -101,6 +102,8 @@ let string_of_stmt = function
       comp_id ^ ".addTrack(" ^ track_id ^ ");"
   | SetKey (section_id, key) ->
       section_id ^ ".setKey(" ^ string_of_int key ^ ");"
+  | SetInstrument (track_id, instrument) ->
+    track_id ^ ".setInstrument(" ^ instrument ^ ");"
 
 (* Utility to pull an identifier out of an expr of the form Var or Member(Var, _) *)
 let extract_id_of_expr = function
@@ -118,11 +121,9 @@ let extract_id_of_expr = function
           let measures_id = arg_id in
           AddMeasures (receiver_name, measures_id)
  
- 
       | "addSection" ->
           let section_id = arg_id in
           AddSection (receiver_name, section_id)
- 
  
       | "addTrack" ->
           let track_id = arg_id in
@@ -136,6 +137,10 @@ let extract_id_of_expr = function
           let () = Printf.printf "Parsed SetKey: %s -> %d\n%!"
             receiver_name key_value in
               SetKey (receiver_name, key_value)
+      
+      | "setInstrument" ->
+          let track_id = arg_id in
+          SetInstrument (receiver_name, track_id)
  
       | other ->
           failwith ("Unknown method name in FindFunction: " ^ other) 
