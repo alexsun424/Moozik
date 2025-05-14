@@ -44,6 +44,7 @@ type expr =
  | Ident   of string
  | Member  of expr * string
  | IntLit  of int 
+ | TimeSig of int * int 
 
 (* Statement types for our language *)
 type stmt =
@@ -57,6 +58,7 @@ type stmt =
   | AddTrack of string * string                  (* testComp.addTrack(testTrack); *)
   | SetKey of string * int                       (* testSection.setKey(100); *)
   | SetInstrument of string * string             (* testTrack.setInstrument(piano); *)
+  | SetTiming of string * int * int              (* testSection.setTiming(4/4); *)
 
 (* Program is a list of statements *)
 type program = stmt list
@@ -104,46 +106,60 @@ let string_of_stmt = function
       section_id ^ ".setKey(" ^ string_of_int key ^ ");"
   | SetInstrument (track_id, instrument) ->
     track_id ^ ".setInstrument(" ^ instrument ^ ");"
+  | SetTiming (section_id, num, denom) ->
+      section_id ^ ".setTiming(" ^ string_of_int num ^ "/" ^ string_of_int denom ^ ");"
 
-(* Utility to pull an identifier out of an expr of the form Var or Member(Var, _) *)
 let extract_id_of_expr = function
  | Ident s -> s
  | Member (Ident s, _) -> s
  | IntLit i -> string_of_int i 
+ | TimeSig(_, _) -> failwith "Time signature cannot be used as an identifier"
  | _ -> failwith "Expected simple Ident, Member, or IntLit"
 
  let find_function receiver_name method_name arg_expr =
-  (* get just the ID of the argument to pass into the stmt *)
-  let arg_id = extract_id_of_expr arg_expr in
-    match method_name with
-      | "addMeasures" ->
-          (* e.g. testSection.addMeasures(testMeasures.measures) *)
-          let measures_id = arg_id in
-          AddMeasures (receiver_name, measures_id)
- 
-      | "addSection" ->
-          let section_id = arg_id in
-          AddSection (receiver_name, section_id)
- 
-      | "addTrack" ->
-          let track_id = arg_id in
-          AddTrack (receiver_name, track_id)
-      
-      | "setKey" ->
-        let key_value = match arg_expr with
-          | IntLit i -> i
-          | _ -> failwith "setKey expects an integer argument"
-          in
-          let () = Printf.printf "Parsed SetKey: %s -> %d\n%!"
-            receiver_name key_value in
-              SetKey (receiver_name, key_value)
-      
-      | "setInstrument" ->
-          let track_id = arg_id in
-          SetInstrument (receiver_name, track_id)
- 
-      | other ->
-          failwith ("Unknown method name in FindFunction: " ^ other) 
+  match method_name with
+    | "addMeasures" ->
+        (* get just the ID of the argument to pass into the stmt *)
+        let arg_id = extract_id_of_expr arg_expr in
+        (* e.g. testSection.addMeasures(testMeasures.measures) *)
+        let measures_id = arg_id in
+        AddMeasures (receiver_name, measures_id)
+
+    | "addSection" ->
+        let arg_id = extract_id_of_expr arg_expr in
+        let section_id = arg_id in
+        AddSection (receiver_name, section_id)
+
+    | "addTrack" ->
+        let arg_id = extract_id_of_expr arg_expr in
+        let track_id = arg_id in
+        AddTrack (receiver_name, track_id)
+    
+    | "setKey" ->
+      let key_value = match arg_expr with
+        | IntLit i -> i
+        | _ -> failwith "setKey expects an integer argument"
+        in
+        let () = Printf.printf "Parsed SetKey: %s -> %d\n%!"
+          receiver_name key_value in
+            SetKey (receiver_name, key_value)
+    
+    | "setInstrument" ->
+        let instrument = match arg_expr with
+          | Ident s -> s
+          | _ -> failwith "setInstrument expects an instrument name"
+        in
+        SetInstrument (receiver_name, instrument)
+    
+    | "setTiming" ->
+        let (num, denom) = match arg_expr with
+          | TimeSig (n, d) -> (n, d)
+          | _ -> failwith "setTiming expects a time signature"
+        in
+        SetTiming (receiver_name, num, denom)
+
+    | other ->
+        failwith ("Unknown method name in FindFunction: " ^ other)
 
 let string_of_program stmts =
   "\n\nParsed program: \n\n" ^

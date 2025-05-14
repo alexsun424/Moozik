@@ -34,6 +34,7 @@ rule token = parse
   | '}'           { RBRACE }
   | ','           { COMMA }
   | '.'           { DOT }
+  | '/'           { SLASH }
   | int as num    { INT(int_of_string num) } 
   | note accidental digit as note { NOTE(note) }
   (* | 'c' '-' digit+ as note { 

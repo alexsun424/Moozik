@@ -10,6 +10,7 @@
 %token DOT
 %token NEW BEGIN END REPEAT
 %token ASSIGN SEMICOLON LPAREN RPAREN LBRACKET RBRACKET COMMA LBRACE RBRACE
+%token SLASH
 %token EOF
 
 %start program_rule
@@ -32,6 +33,7 @@ expr:
  | ID                { Ident $1 }
  | INT               { IntLit $1 }
  | ID DOT ID         { Member (Ident $1, $3) }
+ | INT SLASH INT     { TimeSig($1, $3) } 
 
 stmt:
  COMPOSITION ID ASSIGN NEW COMPOSITION LPAREN RPAREN SEMICOLON

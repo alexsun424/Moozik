@@ -31,6 +31,7 @@ type sstmt =
   | SAddTrack of string * string                   (* testComp.addTrack(testTrack); *)
   | SSetKey of string * int                        (* testSection.setKey(100); *)
   | SSetInstrument of string * string              (* testTrack.setInstrument(piano); *)
+  | SSetTiming of string * int * int               (* testSection.setTiming(4/4); *)
 
 (* Semantically-checked program *)
 type sprogram = sstmt list
@@ -71,6 +72,8 @@ let string_of_sstmt = function
       section_id ^ ".setKey(" ^ string_of_int key ^ ");"
   | SSetInstrument (track_id, instrument) ->
       track_id ^ ".setInstrument(" ^ instrument ^ ");"  
+  | SSetTiming (section_id, num, denom) ->
+      section_id ^ ".setTiming(" ^ string_of_int num ^ "/" ^ string_of_int denom ^ ");"
 
 let string_of_sprogram sstmts =
   "\n\nSemantically checked program: \n\n" ^
