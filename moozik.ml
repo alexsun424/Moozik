@@ -1,55 +1,29 @@
-open Ast
-open Sast
-open Semant
+(* Top-level of the Moozik compiler: scan & parse the input,
+   check the resulting AST and generate an SAST from it, generate LLVM IR,
+   and dump the module *)
 
-let _ =
-  let input = "Composition  testComp = new Composition();
-Track testTrack = new Track();
-Track testTrack2 = new Track();
-Section testSection = new Section();
-Section testSection2 = new Section();
-Measure testMeasures = new Measure();
-testMeasures.measures = 
-	begin; 
-i_see_you = [c2 c2;]
-  some_notes = [c+1 c-2;]
-  e1 e1 e1 e1;
+   type action = Ast | Sast | LLVM_IR
 
-e1 e1 e1 e1;
-
-e1 e1 e1 e1;
-e2 e2 e2 e2;
-some_notes
-repeat(3) {
-  e1 e1 e1 e1;
-  i_see_you
-}
-e2 e2 e2 e2;
-some_notes
-
-repeat(2) {
-  e1 e1 e1 e1;
-  i_see_you
-  repeat(3) {
-    a1 b+1 c-1 d1;
-    some_notes
-  }
-}
-
-	end;
-testSection.addMeasures(testMeasures.measures);
-testTrack.addSection(testSection);
-testTrack.addSection(testSection2);
-testTrack.setInstrument(piano);
-testComp.addTrack(testTrack);
-testComp.addTrack(testTrack2);
-testSection.setTiming(4/4);
-testSection.setKey(100);
- $" in
-  let lexbuf = Lexing.from_string  input in
-  let program = Parser.program_rule Scanner.token lexbuf in
-  print_endline (string_of_program program);
-  print_endline (string_of_sprogram (check program))
-
-  (* 
-testSection.setTiming(4.4); *)
+   let () =
+     let action = ref LLVM_IR in
+     let set_action a () = action := a in
+     let speclist = [
+       ("-a", Arg.Unit (set_action Ast), "Print the AST");
+       ("-s", Arg.Unit (set_action Sast), "Print the SAST");
+       ("-l", Arg.Unit (set_action LLVM_IR), "Print the generated LLVM IR");
+     ] in
+     let usage_msg = "usage: ./moozik.native [-a|-s|-l] [file.mz]" in
+     let channel = ref stdin in
+     Arg.parse speclist (fun filename -> channel := open_in filename) usage_msg;
+   
+     let lexbuf = Lexing.from_channel !channel in
+   
+     let ast = Parser.program_rule Scanner.token lexbuf in
+     match !action with
+       Ast -> print_string (Ast.string_of_program ast)
+     | _ -> let sast = Semant.check ast in
+       match !action with
+         Ast     -> ()
+       | Sast    -> print_string (Sast.string_of_sprogram sast)
+       | LLVM_IR -> print_string (Llvm.string_of_llmodule (Irgen.translate sast))
+      
