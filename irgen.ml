@@ -77,8 +77,17 @@ let flatten_music_section (section : music_section) =
   
   List.flatten (List.map expand_item section.bars)
 
+(* Map instrument names to MIDI program numbers *)
+let get_instrument_number = function
+  | "piano" -> 0   (* Acoustic Grand Piano *)
+  | "violin" -> 40 (* Violin *)
+  | "flute" -> 73  (* Flute *)
+  | "guitar" -> 24 (* Acoustic Guitar (nylon) *)
+  | "drums" -> 0   (* For drums we'll need to use channel 9 and different note numbers *)
+  | _ -> 0         (* Default to piano *)
+
 (* Generate MIDI bytes for a sequence of notes with time signature *)
-let generate_midi_bytes notes time_sig_num time_sig_denom =
+let generate_midi_bytes notes time_sig_num time_sig_denom instrument =
   (* MIDI file header *)
   let header = [|
     (* MThd header *)
@@ -109,6 +118,13 @@ let generate_midi_bytes notes time_sig_num time_sig_denom =
     0x08;                     (* 32nd notes per 24 MIDI clocks *)
   ] in
   events := !events @ time_sig_event;
+  
+  (* Add instrument (Program Change) event *)
+  let instrument_num = get_instrument_number instrument in
+  let instrument_event = [
+    0x00; 0xC0; instrument_num;  (* Program Change event: channel 0, instrument number *)
+  ] in
+  events := !events @ instrument_event;
   
   (* Convert absolute time to MIDI delta time *)
   let to_delta_time time =
@@ -169,9 +185,9 @@ let generate_midi_bytes notes time_sig_num time_sig_denom =
   Array.append header (Array.append track_header (Array.of_list !events))
 
 (* Process a music section and write to MIDI file *)
-let generate_midi section filename time_sig_num time_sig_denom =
+let generate_midi section filename time_sig_num time_sig_denom instrument =
   let notes = flatten_music_section section in
-  let midi_data = generate_midi_bytes notes time_sig_num time_sig_denom in
+  let midi_data = generate_midi_bytes notes time_sig_num time_sig_denom instrument in
   
   (* Write to file *)
   let oc = open_out_bin filename in
@@ -181,9 +197,9 @@ let generate_midi section filename time_sig_num time_sig_denom =
   Printf.printf "Wrote %s!\n" filename
 
 (* Main entry point for IR generation *)
-let generate_ir section outfile time_sig_num time_sig_denom =
+let generate_ir section outfile time_sig_num time_sig_denom instrument =
   let notes = flatten_music_section section in
-  generate_midi section outfile time_sig_num time_sig_denom;
+  generate_midi section outfile time_sig_num time_sig_denom instrument;
   
   (* Also create LLVM IR that generates the MIDI file *)
   let context = Llvm.global_context () in
@@ -212,7 +228,7 @@ let generate_ir section outfile time_sig_num time_sig_denom =
   Llvm.position_at_end entry_bb builder;
   
   (* Generate MIDI data as a global constant array *)
-  let midi_data = generate_midi_bytes notes time_sig_num time_sig_denom in
+  let midi_data = generate_midi_bytes notes time_sig_num time_sig_denom instrument in
   let midi_array = Llvm.const_array i8_t (Array.map (Llvm.const_int i8_t) midi_data) in
   let midi_global = Llvm.define_global "midi_data" midi_array the_module in
   
@@ -249,29 +265,33 @@ let _ =
       variables = [("test", ["c4"; "e4"; "g4"])]; 
       bars = [Notes ["c4"; "d4"; "e4"; "f4"; "g4"; "a4"; "b4"; "c5"]] 
     } in
-    ignore (generate_ir section Sys.argv.(1) 4 4)
+    ignore (generate_ir section Sys.argv.(1) 4 4 "piano")
 
 (* Main entry point for SAST to LLVM translation *)
 let translate sast =
-  (* Extract music sections and time signatures from the program *)
-  let extract_section_and_timing sast =
-    let rec find_sections_and_timing stmts =
+  (* Extract music sections, time signatures, and instrument from the program *)
+  let extract_section_timing_and_instrument sast =
+    let rec find_sections_timing_and_instrument stmts =
       match stmts with
-      | [] -> (None, 4, 4)  (* Default 4/4 time signature *)
+      | [] -> (None, 4, 4, "piano")  (* Default 4/4 time signature and piano *)
       | SMeasuresAssign(_, section) :: rest -> 
-          (Some section, 4, 4)  (* Found section, keep default timing *)
+          let (_, num, denom, instr) = find_sections_timing_and_instrument rest in
+          (Some section, num, denom, instr)
       | SSetTiming(_, num, denom) :: rest ->
-          let (section, _, _) = find_sections_and_timing rest in
-          (section, num, denom)
-      | _ :: rest -> find_sections_and_timing rest
+          let (section, _, _, instr) = find_sections_timing_and_instrument rest in
+          (section, num, denom, instr)
+      | SSetInstrument(_, instrument) :: rest ->
+          let (section, num, denom, _) = find_sections_timing_and_instrument rest in
+          (section, num, denom, instrument)
+      | _ :: rest -> find_sections_timing_and_instrument rest
     in
     
-    match find_sections_and_timing sast with
-    | (Some section, num, denom) -> (section, num, denom)
-    | (None, num, denom) -> ({ svariables = []; sbars = [] }, num, denom)
+    match find_sections_timing_and_instrument sast with
+    | (Some section, num, denom, instr) -> (section, num, denom, instr)
+    | (None, num, denom, instr) -> ({ svariables = []; sbars = [] }, num, denom, instr)
   in
   
-  let (section, time_sig_num, time_sig_denom) = extract_section_and_timing sast in
+  let (section, time_sig_num, time_sig_denom, instrument) = extract_section_timing_and_instrument sast in
   
   (* Convert SAST music section to AST format for existing code *)
   let to_ast_section section =
@@ -290,11 +310,25 @@ let translate sast =
   
   let ast_section = to_ast_section section in
   
+  (* Get input filename from command line arguments *)
+  let input_file = 
+    if Array.length Sys.argv > 2 then
+      Sys.argv.(2)  (* The filename is the second argument after -l *)
+    else
+      failwith "No input file specified"
+  in
+  let output_file = 
+    if String.ends_with ~suffix:".mz" input_file then
+      String.sub input_file 0 (String.length input_file - 3) ^ ".mid"
+    else
+      input_file ^ ".mid"
+  in
+  
   (* Generate the MIDI file *)
-  generate_midi ast_section "output.mid" time_sig_num time_sig_denom;
+  generate_midi ast_section output_file time_sig_num time_sig_denom instrument;
   
   (* Generate and return the LLVM module *)
-  let llvm_module = generate_ir ast_section "output.mid" time_sig_num time_sig_denom in
+  let llvm_module = generate_ir ast_section output_file time_sig_num time_sig_denom instrument in
   
   (* Write the LLVM IR to a file for direct use with lli *)
   Llvm.print_module "example.ll" llvm_module;

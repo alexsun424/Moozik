@@ -59,14 +59,21 @@ music_stmts:
   | music_stmts music_item          { { variables = $1.variables; bars = $1.bars @ [ $2 ] } }
 
 vdecl_rule:
-  ID ASSIGN LBRACKET bar_rule RBRACKET { ($1, $4) }
+  ID ASSIGN LBRACKET bar_list RBRACKET { 
+    let all_notes = List.concat $4 in
+    ($1, all_notes)
+  }
+
+bar_list:
+  | bar_rule { [$1] }
+  | bar_rule bar_list { $1 :: $2 }
 
 music_item:
   | bar_rule                { Notes($1) }
   | var_ref_rule            { VarRef($1) } 
   | repeat_rule             { Repeat($1) }
 
- repeat_rule:
+repeat_rule:
   | REPEAT LPAREN INT RPAREN LBRACE music_item_list RBRACE 
       { { count = $3; body = $6 } }
   | error { 
@@ -87,7 +94,7 @@ bar_rule:
 
 note_list:
 | NOTE { [$1] }
-| NOTE note_list { $1 :: $2}
+| NOTE note_list { $1 :: $2 }
 
 
 %%

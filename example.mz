@@ -6,21 +6,36 @@ Section testSection2 = new Section();
 Measure testMeasures = new Measure();
 testMeasures.measures = 
 	begin; 
-  e+2 d-1 c2 d1;
-  e2 e1 e2 r3;
-  d1 d1 d1 r1;
-  e1 g1 g1 r1;
-  e1 d1 c1 d1;
-  e1 e1 e1 e1;
-  d1 d1 e1 d1;
-  c1 r1 r1 r1;
+	first = 
+	[e+2 d-1 c2 d1;
+  	 e2 e1 e2 r3;]
+	
+	second = 
+	[e1 d1 c1 d1;
+  	 e1 e1 e1 e1;
+  	 d1 d1 e1 d1;
+  	 c1 r1 r1 r1;]
 
+	first
+	e+2 d-1 c2 d1;
+	e2 e1 e2 r3;
+	d1 d1 d1 r1;
+	e1 g1 g1 r1;
+
+	repeat (3) {
+		first
+		c1 r1;
+		repeat (2) {
+			c1 r1;
+			second
+		}
+	}
 
 end;
 testSection.addMeasures(testMeasures.measures);
 testTrack.addSection(testSection);
 testTrack.addSection(testSection2);
-testTrack.setInstrument(piano);
+testTrack.setInstrument(violin);
 testComp.addTrack(testTrack);
 testComp.addTrack(testTrack2);
 testSection.setTiming(4/4);
