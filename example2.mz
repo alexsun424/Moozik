@@ -6,23 +6,21 @@ Section testSection1 = new Section();
 Measure testMeasures1 = new Measure();
 testMeasures1.measures = 
 	begin; 
-	
-
 	first = 
-	[e+2 d-1 c2 d1;
+	[e2 d1 c2 d1;
   	 e2 e1 e2 r3;
-	 <e4 e5 e6>;]
+	]
 	
 	second = 
 	[e1 d1 c1 d1;
   	 e1 e1 e1 e1;
   	 d1 d1 e1 d1;
-  	 c1 r1 r1 r1;	<e7 e8 e9>;]
+  	 c1 r1 r1 r1;
+	]
 
 	first
-	e+2 d-1 c2 d1;
+	e2 d1 c2 d1;
 	e2 e1 e2 r3;
-		<e1 e2 e3>;
 	d1 d1 d1 r1;
 	e1 g1 g1 r1;
 
