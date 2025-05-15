@@ -4,7 +4,6 @@
 
 %token <string> ID
 %token <string> NOTE
-%token LVECT RVECT
 %token <int> INT  
 %token <int> R_NOTE
 %token COMPOSITION TRACK SECTION MEASURE
@@ -13,7 +12,6 @@
 %token ASSIGN SEMICOLON LPAREN RPAREN LBRACKET RBRACKET COMMA LBRACE RBRACE
 %token SLASH
 %token EOF
-
 
 %start program_rule
 %type <Ast.program> program_rule
@@ -95,18 +93,8 @@ bar_rule:
 | note_list SEMICOLON { $1 }
 
 note_list:
-| musical_element { [$1] }
-| musical_element note_list { $1 :: $2 }
-
-musical_element:
-| NOTE { Note($1) }
-| chord { Chord($1) }
-
-chord:
-| LVECT chord_note_list RVECT { $2 }
-
-chord_note_list:
 | NOTE { [$1] }
-| NOTE chord_note_list { $1 :: $2 }
+| NOTE note_list { $1 :: $2 }
+
 
 %%

@@ -1,16 +1,8 @@
 (* Note representation *)
 type note = string
 
-(* A sequence of concurrent notes *)
-type chord = note list
-
-(* A musical element can be either a single note or a chord *)
-type musical_element = 
-  | Note of note
-  | Chord of chord
-
-(* A sequence of notes and/or chords *)
-type measures = musical_element list
+(* A sequence of notes *)
+type measures = note list
 
 (* Variable declaration in music section *)
 type var = string * measures
@@ -72,17 +64,13 @@ type stmt =
 type program = stmt list
 
 (* String conversion functions *)
-let string_of_musical_element = function
-  | Note n -> n
-  | Chord notes -> "<" ^ String.concat " " notes ^ ">"
-
 let string_of_measures measures =
-  String.concat " " (List.map string_of_musical_element measures)
+  String.concat " " measures
 
 let string_of_var (name, notes) =
   name ^ " = [" ^ string_of_measures notes ^ "]"
 
-(* we no longer append ";"—we just print exactly what string_of_measures gives us *)
+(* we no longer append “;”—we just print exactly what string_of_measures gives us *)
 let string_of_bar measures =
   string_of_measures measures
 

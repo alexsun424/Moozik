@@ -1,14 +1,9 @@
 (* Define the necessary types directly here *)
 type note = string
-type chord = note list
-
-type smusical_element = 
-  |SNOTE of note
-  |SCHORD of chord
 
 (* Semantically-checked music items *)
 type smusic_item = 
-  | SMusicalElements of smusical_element list
+  | SNotes of note list
   | SVarRef of string
   | SRepeat of srepeat_expr
 
@@ -20,7 +15,7 @@ and srepeat_expr = {
 
 (* Semantically-checked music section with variables and measures *)
 type smusic_section = {
-  svariables: (string * smusical_element list) list;
+  svariables: (string * note list) list;
   sbars: smusic_item list
 }
 
@@ -42,20 +37,16 @@ type sstmt =
 type sprogram = sstmt list
 
 (* Pretty-printing functions *)
-let string_of_smusical_element = function
-  | SNOTE n -> n
-  | SCHORD notes -> "<" ^ String.concat " " notes ^ ">"
-
 let rec string_of_smusic_item = function
-  | SMusicalElements elements -> String.concat " " (List.map string_of_smusical_element elements)
+  | SNotes notes -> String.concat " " notes
   | SVarRef var_name -> var_name
   | SRepeat repeat_expr -> 
       "repeat(" ^ string_of_int repeat_expr.scount ^ "){\n\t" ^ 
       String.concat "\n\t" (List.map string_of_smusic_item repeat_expr.sbody) ^
       "\n}"
 
-let string_of_svar (name, musical_elements) =
-  name ^ " = [" ^ String.concat " " (List.map string_of_smusical_element musical_elements) ^ "]"
+let string_of_svar (name, notes) =
+  name ^ " = [" ^ String.concat " " notes ^ "]"
 
 let string_of_smusic_section section =
   "begin;\n"
