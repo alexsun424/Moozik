@@ -41,15 +41,23 @@ let get_midi_value note_str =
   else
     let base_value = note_to_base note_char in
     
-    (* Parse duration (beats) *)
-    let beats = 
+    (* Parse accidental and duration *)
+    let (accidental_offset, beats) =
       if String.length note_str > 1 then
-        try int_of_string (String.sub note_str 1 (String.length note_str - 1))
-        with _ -> 1
-      else 1
+        match String.get note_str 1 with
+        | '+' | '#' -> 
+            let dur_str = String.sub note_str 2 (String.length note_str - 2) in
+            (1, try int_of_string dur_str with _ -> 1)
+        | '-' | 'b' -> 
+            let dur_str = String.sub note_str 2 (String.length note_str - 2) in
+            (-1, try int_of_string dur_str with _ -> 1)
+        | _ -> 
+            let dur_str = String.sub note_str 1 (String.length note_str - 1) in
+            (0, try int_of_string dur_str with _ -> 1)
+      else (0, 1)
     in
     
-    (base_value, beats)
+    (base_value + accidental_offset, beats)
 
 let flatten_music_section (section : music_section) =
   (* Convert variables list to hashtable for lookup *)

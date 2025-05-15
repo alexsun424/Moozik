@@ -6,7 +6,7 @@ Section testSection2 = new Section();
 Measure testMeasures = new Measure();
 testMeasures.measures = 
 	begin; 
-  e2 d1 c2 d1;
+  e+2 d-1 c2 d1;
   e2 e1 e2 r3;
   d1 d1 d1 r1;
   e1 g1 g1 r1;
