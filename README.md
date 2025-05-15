@@ -97,3 +97,20 @@ lli example.ll
 # Verify that output.mid was created
 ls -la output.mid
 ```
+## Debugging
+If you want to debug after making changes to the front-end (parser/scanner/ast) 
+without running entire llvm, you can run these commands
+```bash
+make clean
+make printast
+cat example.mz | ./printast.native
+```
+
+If you want to debug after making changes to the back-end (semantic parser/sast) 
+without running entire llvm, you can run these commands
+```bash
+make clean
+make printsast
+./printsast.native < example.mz
+```
+
