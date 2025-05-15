@@ -40,6 +40,13 @@ type composition = {
   tracks: track list;
 }
 
+type music_object =
+| Composition of composition
+| Track of track
+| Section of section
+| Bars of music_item list
+| Measures of measures
+
 type expr =
  | Ident   of string
  | Member  of expr * string
@@ -164,3 +171,51 @@ let extract_id_of_expr = function
 let string_of_program stmts =
   "\n\nParsed program: \n\n" ^
   String.concat "\n" (List.map string_of_stmt stmts)
+
+let playback music_object =
+  let rec expand (obj, note_strings) =
+    match obj with
+
+      Composition {tracks} :: music_objects ->
+        if tracks != [] then
+          let h :: t = tracks in
+            expand (Track h :: [Composition {tracks = t}], note_strings)
+        else
+          expand ([], note_strings)
+  
+    | Track {sections} :: music_objects ->
+        if sections != [] then
+          let h :: t = sections in
+            expand (Section h :: Track {sections = t} :: music_objects, note_strings)
+        else
+          expand (music_objects, note_strings)
+
+    | Section {measures} :: music_objects ->
+        (* A Section contains field "measures" = a list of music_section *)
+        if measures != [] then
+          let h :: t = measures in
+            (* A music_section contains a field "bars" = a list of music_items *)
+            expand (Bars h.bars :: Section {measures = t} :: music_objects, note_strings)
+        else 
+          expand (music_objects, note_strings)
+
+    | Bars music_items :: music_objects ->
+        if music_items != [] then
+          let h :: t = music_items in
+            let note_strings = note_strings @ [string_of_music_item h] in
+              expand (Bars t :: music_objects, note_strings)
+    
+    | Measures notes :: music_objects ->
+      (* A measure = a list of notes *)
+        if notes != [] then
+          let h :: t = notes in
+            let note_strings = note_strings @ [h] in
+              expand (Measures t :: music_objects, note_strings)
+        else
+          expand (music_objects, note_strings)
+
+    | [] ->
+      let f note = Printf.printf "%s" note in
+        List.iter f note_strings
+      
+  in expand(music_object :: [], [])

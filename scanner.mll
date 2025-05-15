@@ -20,6 +20,9 @@ rule token = parse
   | "Track"       { TRACK }
   | "Section"     { SECTION }
   | "Measure"     { MEASURE }
+  | "Measures"    { MEASURES }
+  | "Bars"        { BARS }
+  | "Playback"    { PLAYBACK }
   | "new"         { NEW }
   | "begin"       { BEGIN }
   | "end"         { END }

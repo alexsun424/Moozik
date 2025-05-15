@@ -6,7 +6,7 @@
 %token <string> NOTE
 %token <int> INT  
 %token <int> R_NOTE
-%token COMPOSITION TRACK SECTION MEASURE
+%token PLAYBACK COMPOSITION TRACK SECTION MEASURE MEASURES BARS
 %token DOT
 %token NEW BEGIN END REPEAT
 %token ASSIGN SEMICOLON LPAREN RPAREN LBRACKET RBRACKET COMMA LBRACE RBRACE
@@ -33,7 +33,14 @@ expr:
  | ID                { Ident $1 }
  | INT               { IntLit $1 }
  | ID DOT ID         { Member (Ident $1, $3) }
- | INT SLASH INT     { TimeSig($1, $3) } 
+ | INT SLASH INT     { TimeSig($1, $3) }
+
+music_object:
+  | COMPOSITION      { Composition }
+  | TRACK            { Track }
+  | SECTION          { Section }
+  | BARS             { Bars }
+  | MEASURES         { Measures }
 
 stmt:
  COMPOSITION ID ASSIGN NEW COMPOSITION LPAREN RPAREN SEMICOLON
@@ -44,14 +51,16 @@ stmt:
    { SectionDecl($2) }
 | MEASURE ID ASSIGN NEW MEASURE LPAREN RPAREN SEMICOLON
    { MeasureDecl($2) }
-| ID DOT ID ASSIGN BEGIN SEMICOLON music_section
-   { if $3 = "measures" then MeasuresAssign($1, $7)
+| ID DOT ID ASSIGN music_section SEMICOLON
+   { if $3 = "measures" then MeasuresAssign($1, $6)
      else failwith ("Unknown property: " ^ $3) }
 | ID DOT ID LPAREN expr RPAREN SEMICOLON
    { find_function $1 $3 $5 }
+| PLAYBACK LPAREN music_object RPAREN SEMICOLON
+   { playback $3 }
 
 music_section:
-| music_stmts END SEMICOLON { $1 }
+| BEGIN music_stmts END { $2 }
 
 music_stmts:
     /* empty */                     { { variables = []; bars = [] } }
@@ -83,11 +92,15 @@ var_ref_rule:
 | ID { $1 }
 
 bar_rule:
-| note_list SEMICOLON { $1 }
+  /* end */ SEMICOLON { [] }
+| note_list bar_rule  { $1 :: $2 }
+| chord_rule bar_rule { $1 :: $2 }
+
+chord_rule:
+  LBRACE note_list RBRACE { ($2) }
 
 note_list:
-| NOTE { [$1] }
-| NOTE note_list { $1 :: $2}
-
+  /* empty */    { [] }
+| NOTE note_list { $1 :: $2 }
 
 %%
