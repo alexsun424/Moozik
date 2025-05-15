@@ -52,7 +52,7 @@ stmt:
 | MEASURE ID ASSIGN NEW MEASURE LPAREN RPAREN SEMICOLON
    { MeasureDecl($2) }
 | ID DOT ID ASSIGN music_section SEMICOLON
-   { if $3 = "measures" then MeasuresAssign($1, $6)
+   { if $3 = "measures" then MeasuresAssign($1, $5)
      else failwith ("Unknown property: " ^ $3) }
 | ID DOT ID LPAREN expr RPAREN SEMICOLON
    { find_function $1 $3 $5 }
