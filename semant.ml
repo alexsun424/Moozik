@@ -45,7 +45,7 @@ let check program =
   let instruments =
     List.fold_left (fun map name -> StringMap.add name true map)
       StringMap.empty
-      ["piano"; "violin"; "flute"; "guitar"; "drums"] 
+      ["piano"; "violin"; "flute"; "guitar"; "french_horn"] 
   in
   
   (* Convert a music_section to a semantically checked smusic_section *)

@@ -94,7 +94,7 @@ let get_instrument_number = function
   | "violin" -> 40 (* Violin *)
   | "flute" -> 73  (* Flute *)
   | "guitar" -> 24 (* Acoustic Guitar (nylon) *)
-  | "drums" -> 0   (* For drums we'll need to use channel 9 and different note numbers *)
+  | "french_horn" -> 60 (* French Horn *)
   | _ -> 0         (* Default to piano *)
 
 (* Generate MIDI bytes for a sequence of notes with time signature *)

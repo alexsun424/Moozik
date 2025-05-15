@@ -68,7 +68,7 @@ testSection1.setKey(60);
 testSection2.addMeasures(testMeasures2.measures);
 testSection2.addMeasures(testMeasures3.measures);
 testTrack2.addSection(testSection2);
-testTrack2.setInstrument(piano);
+testTrack2.setInstrument(french_horn);
 testSection2.setKey(72);
 
 
