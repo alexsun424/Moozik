@@ -1,6 +1,19 @@
 open Ast
 open Sast
 
+(* Track state to store time signature and other track-specific information *)
+type track_state = {
+  time_sig_num: int;
+  time_sig_denom: int;
+  notes: string list;
+}
+
+let default_track_state = {
+  time_sig_num = 4;
+  time_sig_denom = 4;
+  notes = [];
+}
+
 let get_midi_value note_str =
   (* Convert note strings to MIDI note numbers *)
   let note_to_base = function
@@ -11,33 +24,32 @@ let get_midi_value note_str =
     | 'g' -> 67
     | 'a' -> 69
     | 'b' -> 71
+    | 'r' -> -1  (* Special value for rest *)
     | _ -> 60 (* default to middle C *)
   in
   
   let note_char = String.get note_str 0 in
-  let base_value = note_to_base note_char in
-  
-  (* Parse octave modifier if present *)
-  let octave_offset = 
-    if String.length note_str > 1 then
-      try
-        let octave = int_of_string (String.sub note_str 1 1) - 4 in
-        octave * 12
-      with _ -> 0
-    else 0
-  in
-  
-  (* Parse accidentals if present *)
-  let accidental_offset =
-    if String.length note_str > 2 then
-      match String.get note_str 1 with
-      | '+' | '#' -> 1
-      | '-' | 'b' -> -1
-      | _ -> 0
-    else 0
-  in
-  
-  base_value + octave_offset + accidental_offset
+  if note_char = 'r' then
+    (* Handle rest *)
+    let beats = 
+      if String.length note_str > 1 then
+        try int_of_string (String.sub note_str 1 (String.length note_str - 1))
+        with _ -> 1
+      else 1
+    in
+    (-1, beats)  (* -1 indicates rest *)
+  else
+    let base_value = note_to_base note_char in
+    
+    (* Parse duration (beats) *)
+    let beats = 
+      if String.length note_str > 1 then
+        try int_of_string (String.sub note_str 1 (String.length note_str - 1))
+        with _ -> 1
+      else 1
+    in
+    
+    (base_value, beats)
 
 let flatten_music_section (section : music_section) =
   (* Convert variables list to hashtable for lookup *)
@@ -57,8 +69,8 @@ let flatten_music_section (section : music_section) =
   
   List.flatten (List.map expand_item section.bars)
 
-(* Generate MIDI bytes for a sequence of notes *)
-let generate_midi_bytes notes =
+(* Generate MIDI bytes for a sequence of notes with time signature *)
+let generate_midi_bytes notes time_sig_num time_sig_denom =
   (* MIDI file header *)
   let header = [|
     (* MThd header *)
@@ -71,15 +83,64 @@ let generate_midi_bytes notes =
   
   (* Track events *)
   let events = ref [] in
+  let current_time = ref 0 in
+  
+  (* Calculate power of 2 for time signature denominator *)
+  let rec power_of_2 n acc =
+    if n = 1 then acc
+    else if n mod 2 = 0 then power_of_2 (n / 2) (acc + 1)
+    else failwith "Time signature denominator must be a power of 2"
+  in
+  
+  (* Add time signature meta event *)
+  let time_sig_event = [
+    0x00; 0xFF; 0x58; 0x04;  (* Time signature meta event *)
+    time_sig_num;             (* Numerator *)
+    power_of_2 time_sig_denom 0;  (* Denominator as power of 2 *)
+    0x18;                     (* MIDI clocks per metronome click *)
+    0x08;                     (* 32nd notes per 24 MIDI clocks *)
+  ] in
+  events := !events @ time_sig_event;
+  
+  (* Convert absolute time to MIDI delta time *)
+  let to_delta_time time =
+    if time > 127 then
+      let high_byte = (time lsr 7) land 0x7F in
+      let low_byte = time land 0x7F in
+      [0x80 lor high_byte; low_byte]
+    else
+      [time]
+  in
   
   (* Add each note as Note On followed by Note Off events *)
-  List.iter (fun note ->
-    let midi_value = get_midi_value note in
-    (* Note On event - delta-time 0, channel 0, note value, velocity 80 *)
-    events := !events @ [0x00; 0x90; midi_value; 0x50];
-    (* Note Off event - delta-time 96 (quarter note), channel 0, note value, velocity 40 *)
-    events := !events @ [0x60; 0x80; midi_value; 0x40];
-  ) notes;
+  let rec process_notes remaining_notes =
+    match remaining_notes with
+    | [] -> ()
+    | note :: rest ->
+        let (midi_value, beats) = get_midi_value note in
+        let ticks_per_beat = 96 in  (* Standard MIDI resolution *)
+        let ticks = beats * ticks_per_beat in
+        
+        if midi_value >= 0 then begin  (* Only generate events for non-rest notes *)
+          (* Note On event *)
+          events := !events @ (to_delta_time !current_time) @ [0x90; midi_value; 0x50];
+          current_time := 0;  (* Reset for next event *)
+          
+          (* Note Off event *)
+          current_time := !current_time + ticks;
+          events := !events @ (to_delta_time !current_time) @ [0x80; midi_value; 0x40];
+          current_time := 0;  (* Reset for next event *)
+        end else begin
+          (* For rests, just advance the time *)
+          current_time := !current_time + ticks;
+        end;
+        
+        (* Process next note *)
+        process_notes rest
+  in
+  
+  (* Process all notes *)
+  process_notes notes;
   
   (* End of track meta event *)
   events := !events @ [0x00; 0xFF; 0x2F; 0x00];
@@ -100,9 +161,9 @@ let generate_midi_bytes notes =
   Array.append header (Array.append track_header (Array.of_list !events))
 
 (* Process a music section and write to MIDI file *)
-let generate_midi section filename =
+let generate_midi section filename time_sig_num time_sig_denom =
   let notes = flatten_music_section section in
-  let midi_data = generate_midi_bytes notes in
+  let midi_data = generate_midi_bytes notes time_sig_num time_sig_denom in
   
   (* Write to file *)
   let oc = open_out_bin filename in
@@ -112,9 +173,9 @@ let generate_midi section filename =
   Printf.printf "Wrote %s!\n" filename
 
 (* Main entry point for IR generation *)
-let generate_ir section outfile =
+let generate_ir section outfile time_sig_num time_sig_denom =
   let notes = flatten_music_section section in
-  generate_midi section outfile;
+  generate_midi section outfile time_sig_num time_sig_denom;
   
   (* Also create LLVM IR that generates the MIDI file *)
   let context = Llvm.global_context () in
@@ -143,7 +204,7 @@ let generate_ir section outfile =
   Llvm.position_at_end entry_bb builder;
   
   (* Generate MIDI data as a global constant array *)
-  let midi_data = generate_midi_bytes notes in
+  let midi_data = generate_midi_bytes notes time_sig_num time_sig_denom in
   let midi_array = Llvm.const_array i8_t (Array.map (Llvm.const_int i8_t) midi_data) in
   let midi_global = Llvm.define_global "midi_data" midi_array the_module in
   
@@ -180,25 +241,29 @@ let _ =
       variables = [("test", ["c4"; "e4"; "g4"])]; 
       bars = [Notes ["c4"; "d4"; "e4"; "f4"; "g4"; "a4"; "b4"; "c5"]] 
     } in
-    ignore (generate_ir section Sys.argv.(1))
+    ignore (generate_ir section Sys.argv.(1) 4 4)
 
 (* Main entry point for SAST to LLVM translation *)
 let translate sast =
-  (* Extract music sections from the program *)
-  let extract_section sast =
-    let rec find_sections stmts =
+  (* Extract music sections and time signatures from the program *)
+  let extract_section_and_timing sast =
+    let rec find_sections_and_timing stmts =
       match stmts with
-      | [] -> None
-      | SMeasuresAssign(_, section) :: _ -> Some section
-      | _ :: rest -> find_sections rest
+      | [] -> (None, 4, 4)  (* Default 4/4 time signature *)
+      | SMeasuresAssign(_, section) :: rest -> 
+          (Some section, 4, 4)  (* Found section, keep default timing *)
+      | SSetTiming(_, num, denom) :: rest ->
+          let (section, _, _) = find_sections_and_timing rest in
+          (section, num, denom)
+      | _ :: rest -> find_sections_and_timing rest
     in
     
-    match find_sections sast with
-    | Some section -> section
-    | None -> { svariables = []; sbars = [] }  (* Default empty section *)
+    match find_sections_and_timing sast with
+    | (Some section, num, denom) -> (section, num, denom)
+    | (None, num, denom) -> ({ svariables = []; sbars = [] }, num, denom)
   in
   
-  let section = extract_section sast in
+  let (section, time_sig_num, time_sig_denom) = extract_section_and_timing sast in
   
   (* Convert SAST music section to AST format for existing code *)
   let to_ast_section section =
@@ -218,10 +283,10 @@ let translate sast =
   let ast_section = to_ast_section section in
   
   (* Generate the MIDI file *)
-  generate_midi ast_section "output.mid";
+  generate_midi ast_section "output.mid" time_sig_num time_sig_denom;
   
   (* Generate and return the LLVM module *)
-  let llvm_module = generate_ir ast_section "output.mid" in
+  let llvm_module = generate_ir ast_section "output.mid" time_sig_num time_sig_denom in
   
   (* Write the LLVM IR to a file for direct use with lli *)
   Llvm.print_module "example.ll" llvm_module;

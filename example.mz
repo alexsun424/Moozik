@@ -6,26 +6,15 @@ Section testSection2 = new Section();
 Measure testMeasures = new Measure();
 testMeasures.measures = 
 	begin; 
-i_see_you = [c2 c2;]
-some_notes = [c+1 c-2;]
-c1;
+  e2 d1 c2 d1;
+  e2 e1 e2 r3;
+  d1 d1 d1 r1;
+  e1 g1 g1 r1;
+  e1 d1 c1 d1;
+  e1 e1 e1 e1;
+  d1 d1 e1 d1;
+  c1 r1 r1 r1;
 
-some_notes
-repeat(3) {
-c1 d2;
-  i_see_you
-}
-c1 d1;
-some_notes
-
-repeat(2) {
-c1;
-  i_see_you
-  repeat(3) {
-    a1 b+1 c-1 d1;
-    some_notes
-  }
-}
 
 end;
 testSection.addMeasures(testMeasures.measures);
