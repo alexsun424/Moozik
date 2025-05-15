@@ -111,5 +111,5 @@ without running entire llvm, you can run these commands
 ```bash
 make clean
 make printsast
-cat ./printsast.native < example.mz
+./printsast.native < example.mz
 ```
