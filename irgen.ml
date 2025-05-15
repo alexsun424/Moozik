@@ -244,13 +244,13 @@ let generate_ir sections outfile time_sig_num time_sig_denom instrument =
   
   let fclose_t = Llvm.function_type i32_t [| i8ptr_t |] in
   let fclose_func = Llvm.declare_function "fclose" fclose_t the_module in
-  
+
   (* Define main function *)
   let main_t = Llvm.function_type i32_t [||] in
   let main_func = Llvm.define_function "main" main_t the_module in
   let entry_bb = Llvm.append_block context "entry" main_func in
   Llvm.position_at_end entry_bb builder;
-  
+
   (* Generate MIDI data as a global constant array *)
   let midi_data = generate_midi_bytes (flatten_music_section (List.hd sections)) time_sig_num time_sig_denom instrument 0 in
   
@@ -479,13 +479,18 @@ let translate sast input_file =
     generate_midi_bytes notes time_sig_num time_sig_denom instrument track_index
   ) sections in
   
+  (* Get number of tracks from track_to_index map *)
+  let num_tracks = StringMap.cardinal track_to_index in
+  Printf.printf "Number of tracks: %d\n" num_tracks;
+  
   (* MIDI file header *)
   let header = [|
     (* MThd header *)
     0x4D; 0x54; 0x68; 0x64;  (* "MThd" *)
     0x00; 0x00; 0x00; 0x06;  (* header length = 6 *)
     0x00; 0x01;              (* format type = 1 (multiple tracks) *)
-    0x00; 0x02;              (* number of tracks = 2 *)
+    (num_tracks lsr 8) land 0xFF;  (* number of tracks high byte *)
+    num_tracks land 0xFF;          (* number of tracks low byte *)
     0x00; 0x60;              (* division = 96 ticks per quarter note *)
   |] in
   

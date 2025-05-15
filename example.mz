@@ -1,11 +1,16 @@
 Composition  testComp = new Composition();
-Track testTrack = new Track();
+
+Track testTrack1 = new Track();
+Section testSection1 = new Section();
+
 Track testTrack2 = new Track();
-Section testSection = new Section();
 Section testSection2 = new Section();
+
+Track testTrack3 = new Track();
 Section testSection3 = new Section();
-Measure testMeasures = new Measure();
-testMeasures.measures = 
+
+Measure testMeasures1 = new Measure();
+testMeasures1.measures = 
 	begin; 
 	first = 
 	[e+2 d-1 c2 d1;
@@ -46,19 +51,32 @@ Measure testMeasures3 = new Measure();
 testMeasures3.measures = 
 begin;
 
-c1 c2 c1 c2;
+r1 c1 c2 r2;
+c1 c2 r2;
 
 end;
-testSection.addMeasures(testMeasures.measures);
-testSection.addMeasures(testMeasures2.measures);
-testSection3.addMeasures(testMeasures3.measures);
-testTrack.addSection(testSection);
-testTrack2.addSection(testSection3);
-testTrack.setInstrument(violin);
-testTrack2.setInstrument(piano);
 
-testSection.setKey(100);
+
+testSection1.addMeasures(testMeasures1.measures);
+testSection1.addMeasures(testMeasures2.measures);
+testTrack1.addSection(testSection1);
+testTrack1.setInstrument(violin);
+testSection1.setKey(100);
+
+testSection2.addMeasures(testMeasures2.measures);
+testSection2.addMeasures(testMeasures3.measures);
+testTrack2.addSection(testSection2);
+testTrack2.setInstrument(piano);
 testSection2.setKey(100);
-testComp.addTrack(testTrack);
+
+
+testSection3.addMeasures(testMeasures2.measures);
+testSection3.addMeasures(testMeasures3.measures);
+testTrack3.addSection(testSection3);
+testTrack3.setInstrument(flute);
+testSection3.setKey(100);
+
+testComp.addTrack(testTrack1);
 testComp.addTrack(testTrack2);
+testComp.addTrack(testTrack3);
 testComp.setTiming(6/8);
