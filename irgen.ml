@@ -12,18 +12,18 @@ let default_track_state = {
   notes = [];
 }
 
-let get_midi_value note_str =
+let get_midi_value note_str key =
   (* Convert note strings to MIDI note numbers *)
   let note_to_base = function
-    | 'c' -> 60
-    | 'd' -> 62
-    | 'e' -> 64
-    | 'f' -> 65
-    | 'g' -> 67
-    | 'a' -> 69
-    | 'b' -> 71
+    | 'c' -> 0
+    | 'd' -> 2
+    | 'e' -> 4
+    | 'f' -> 5
+    | 'g' -> 7
+    | 'a' -> 9
+    | 'b' -> 11
     | 'r' -> -1  (* Special value for rest *)
-    | _ -> 60 (* default to middle C *)
+    | _ -> 0 (* default to C *)
   in
   
   let note_char = String.get note_str 0 in
@@ -39,23 +39,30 @@ let get_midi_value note_str =
   else
     let base_value = note_to_base note_char in
     
-    (* Parse accidental and duration *)
-    let (accidental_offset, beats) =
+    (* Parse octave, accidental and duration *)
+    let (octave, accidental_offset, beats) =
       if String.length note_str > 1 then
-        match String.get note_str 1 with
-        | '+' | '#' -> 
-            let dur_str = String.sub note_str 2 (String.length note_str - 2) in
-            (1, try int_of_string dur_str with _ -> 1)
-        | '-' | 'b' -> 
-            let dur_str = String.sub note_str 2 (String.length note_str - 2) in
-            (-1, try int_of_string dur_str with _ -> 1)
-        | _ -> 
-            let dur_str = String.sub note_str 1 (String.length note_str - 1) in
-            (0, try int_of_string dur_str with _ -> 1)
-      else (0, 1)
+        let rest = String.sub note_str 1 (String.length note_str - 1) in
+        let (acc_offset, dur_str) =
+          if String.length rest > 0 then
+            match String.get rest 0 with
+            | '+' | '#' -> 
+                let dur = String.sub rest 1 (String.length rest - 1) in
+                (1, dur)
+            | '-' | 'b' -> 
+                let dur = String.sub rest 1 (String.length rest - 1) in
+                (-1, dur)
+            | _ -> (0, rest)
+          else (0, "")
+        in
+        let beats = try int_of_string dur_str with _ -> 1 in
+        (key / 12, acc_offset, beats)  (* Use key value to determine octave *)
+      else (key / 12, 0, 1)
     in
     
-    (base_value + accidental_offset, beats)
+    (* Calculate final MIDI value: base + (octave * 12) + accidental *)
+    let midi_value = base_value + (octave * 12) + accidental_offset in
+    (midi_value, beats)
 
 let flatten_music_section (section : music_section) =
   (* Convert variables list to hashtable for lookup *)
@@ -73,7 +80,13 @@ let flatten_music_section (section : music_section) =
           List.flatten (List.map expand_item body)))
   in
   
-  List.flatten (List.map expand_item section.bars)
+  (* Convert musical elements to strings *)
+  let rec element_to_string = function
+    | Note n -> n
+    | Chord notes -> "<" ^ String.concat " " notes ^ ">"
+  in
+  
+  List.map element_to_string (List.flatten (List.map expand_item section.bars))
 
 (* Map instrument names to MIDI program numbers *)
 let get_instrument_number = function
@@ -85,7 +98,7 @@ let get_instrument_number = function
   | _ -> 0         (* Default to piano *)
 
 (* Generate MIDI bytes for a sequence of notes with time signature *)
-let generate_midi_bytes notes time_sig_num time_sig_denom instrument track_number =
+let generate_midi_bytes notes time_sig_num time_sig_denom instrument track_number key =
   (* Track events *)
   let events = ref [] in
   let current_time = ref 0 in
@@ -135,7 +148,7 @@ let generate_midi_bytes notes time_sig_num time_sig_denom instrument track_numbe
     match remaining_notes with
     | [] -> ()
     | note :: rest ->
-        let (midi_value, beats) = get_midi_value note in
+        let (midi_value, beats) = get_midi_value note key in
         let ticks_per_beat = 96 in  (* Standard MIDI resolution *)
         (* Adjust ticks based on time signature *)
         let ticks = 
@@ -196,7 +209,7 @@ let generate_midi_bytes notes time_sig_num time_sig_denom instrument track_numbe
   Array.append track_header (Array.of_list !events)
 
 (* Process a music section and write to MIDI file *)
-let generate_midi sections filename time_sig_num time_sig_denom instrument =
+let generate_midi sections filename time_sig_num time_sig_denom instrument key =
   (* MIDI file header *)
   let header = [|
     (* MThd header *)
@@ -210,7 +223,7 @@ let generate_midi sections filename time_sig_num time_sig_denom instrument =
   (* Generate MIDI data for each section *)
   let track_data = List.mapi (fun i section ->
     let notes = flatten_music_section section in
-    generate_midi_bytes notes time_sig_num time_sig_denom instrument i
+    generate_midi_bytes notes time_sig_num time_sig_denom instrument i key
   ) sections in
   
   (* Combine all track data *)
@@ -224,7 +237,7 @@ let generate_midi sections filename time_sig_num time_sig_denom instrument =
   Printf.printf "Wrote %s!\n" filename
 
 (* Main entry point for IR generation *)
-let generate_ir sections outfile time_sig_num time_sig_denom instrument =
+let generate_ir sections outfile time_sig_num time_sig_denom instrument key =
   (* Also create LLVM IR that generates the MIDI file *)
   let context = Llvm.global_context () in
   let the_module = Llvm.create_module context "midi_module" in
@@ -252,7 +265,7 @@ let generate_ir sections outfile time_sig_num time_sig_denom instrument =
   Llvm.position_at_end entry_bb builder;
 
   (* Generate MIDI data as a global constant array *)
-  let midi_data = generate_midi_bytes (flatten_music_section (List.hd sections)) time_sig_num time_sig_denom instrument 0 in
+  let midi_data = generate_midi_bytes (flatten_music_section (List.hd sections)) time_sig_num time_sig_denom instrument 0 key in
   
   let midi_array = Llvm.const_array i8_t (Array.map (Llvm.const_int i8_t) midi_data) in
   let midi_global = Llvm.define_global "midi_data" midi_array the_module in
@@ -365,17 +378,28 @@ let translate sast input_file =
     
     (* Convert SAST music section to AST format for existing code *)
     let to_ast_section section =
-      let variables = section.svariables in
+      (* Convert SAST musical elements to AST musical elements *)
+      let rec convert_musical_element = function
+        | SNOTE n -> Note n
+        | SCHORD notes -> Chord notes
+      in
+      
+      (* Convert SAST variables to AST variables *)
+      let convert_variables = List.map (fun (name, elements) ->
+        (name, List.map convert_musical_element elements)
+      ) in
       
       let rec convert_item item =
         match item with
-        | SNotes notes -> Notes notes
+        | SMusicalElements elements -> 
+            Notes (List.map convert_musical_element elements)
         | SVarRef name -> VarRef name
         | SRepeat { scount; sbody } -> 
             Repeat { count = scount; body = List.map convert_item sbody }
       in
       
-      { variables = variables; bars = List.map convert_item section.sbars }
+      { variables = convert_variables section.svariables; 
+        bars = List.map convert_item section.sbars }
     in
     
     (* Convert all sections to AST format *)
@@ -429,12 +453,32 @@ let translate sast input_file =
     
     let track_sections = get_track_sections sast in
     
+    (* Get key values for each section *)
+    let rec get_section_keys stmts =
+      match stmts with
+      | [] -> []
+      | SSetKey(section_id, key) :: rest ->
+          Printf.printf "Found key %d for section %s\n" key section_id;
+          (section_id, key) :: get_section_keys rest
+      | _ :: rest -> get_section_keys rest
+    in
+    
+    let section_keys = get_section_keys sast in
+    
     (* Map sections to their tracks *)
     let section_to_track = 
       List.fold_left (fun acc (track_id, section_id) ->
         Printf.printf "Mapping section %s to track %s\n" section_id track_id;
         StringMap.add section_id track_id acc
       ) StringMap.empty track_sections
+    in
+    
+    (* Map sections to their keys *)
+    let section_to_key = 
+      List.fold_left (fun acc (section_id, key) ->
+        Printf.printf "Mapping section %s to key %d\n" section_id key;
+        StringMap.add section_id key acc
+      ) StringMap.empty section_keys
     in
     
     (* Create a map from track IDs to their index *)
@@ -444,10 +488,10 @@ let translate sast input_file =
       ) StringMap.empty (List.mapi (fun i id -> (id, i)) track_ids)
     in
     
-    (ast_sections, time_sig_num, time_sig_denom, section_instruments, section_to_track, section_ids, track_to_index)
+    (ast_sections, time_sig_num, time_sig_denom, section_instruments, section_to_track, section_ids, track_to_index, section_to_key)
   in
   
-  let (sections, time_sig_num, time_sig_denom, section_instruments, section_to_track, section_ids, track_to_index) = 
+  let (sections, time_sig_num, time_sig_denom, section_instruments, section_to_track, section_ids, track_to_index, section_to_key) = 
     extract_section_timing_and_instrument sast in
   
   let output_file = 
@@ -465,6 +509,15 @@ let translate sast input_file =
     Printf.printf "Found track %s for section %s\n" track_id section_id;
     let track_index = StringMap.find track_id track_to_index in
     Printf.printf "Track %s has index %d\n" track_id track_index;
+    let key = 
+      try 
+        let k = StringMap.find section_id section_to_key in
+        Printf.printf "Using key %d for section %s\n" k section_id;
+        k
+      with Not_found -> 
+        Printf.printf "No key found for section %s, using middle C (60)\n" section_id;
+        60  (* Default to middle C *)
+    in
     let instrument = 
       try 
         let instr = StringMap.find track_id section_instruments in
@@ -475,8 +528,8 @@ let translate sast input_file =
         "piano"
     in
     let notes = flatten_music_section section in
-    Printf.printf "Generating MIDI data for track %d with instrument %s\n" track_index instrument;
-    generate_midi_bytes notes time_sig_num time_sig_denom instrument track_index
+    Printf.printf "Generating MIDI data for track %d with instrument %s and key %d\n" track_index instrument key;
+    generate_midi_bytes notes time_sig_num time_sig_denom instrument track_index key
   ) sections in
   
   (* Get number of tracks from track_to_index map *)
@@ -505,9 +558,37 @@ let translate sast input_file =
   Printf.printf "Wrote %s!\n" output_file;
   
   (* Generate and return the LLVM module *)
-  let llvm_module = generate_ir sections output_file time_sig_num time_sig_denom "piano" in
+  let llvm_module = 
+    (* Get the first track ID from track_to_index *)
+    let first_track = 
+      StringMap.fold (fun k _ acc -> 
+        if acc = "" then k else acc
+      ) track_to_index ""
+    in
+    let instrument = 
+      try 
+        StringMap.find first_track section_instruments
+      with Not_found -> 
+        Printf.printf "No instrument found for track %s, using piano\n" first_track;
+        "piano"
+    in
+    let key = 
+      try 
+        StringMap.find (List.hd section_ids) section_to_key
+      with Not_found -> 
+        Printf.printf "No key found for section %s, using middle C (60)\n" (List.hd section_ids);
+        60  (* Default to middle C *)
+    in
+    generate_ir sections output_file time_sig_num time_sig_denom instrument key
+  in
   
   (* Write the LLVM IR to a file for direct use with lli *)
-  Llvm.print_module "example.ll" llvm_module;
+  let llvm_file = 
+    if String.ends_with ~suffix:".mz" input_file then
+      String.sub input_file 0 (String.length input_file - 3) ^ ".ll"
+    else
+      input_file ^ ".ll"
+  in
+  Llvm.print_module llvm_file llvm_module;
   
   llvm_module
