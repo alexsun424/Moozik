@@ -58,7 +58,7 @@ type stmt =
   | AddTrack of string * string                  (* testComp.addTrack(testTrack); *)
   | SetKey of string * int                       (* testSection.setKey(100); *)
   | SetInstrument of string * string             (* testTrack.setInstrument(piano); *)
-  | SetTiming of string * int * int              (* testSection.setTiming(4/4); *)
+  | SetTiming of int * int                       (* Global time signature for the composition *)
 
 (* Program is a list of statements *)
 type program = stmt list
@@ -70,7 +70,6 @@ let string_of_measures measures =
 let string_of_var (name, notes) =
   name ^ " = [" ^ string_of_measures notes ^ "]"
 
-(* we no longer append “;”—we just print exactly what string_of_measures gives us *)
 let string_of_bar measures =
   string_of_measures measures
 
@@ -106,8 +105,8 @@ let string_of_stmt = function
       section_id ^ ".setKey(" ^ string_of_int key ^ ");"
   | SetInstrument (track_id, instrument) ->
     track_id ^ ".setInstrument(" ^ instrument ^ ");"
-  | SetTiming (section_id, num, denom) ->
-      section_id ^ ".setTiming(" ^ string_of_int num ^ "/" ^ string_of_int denom ^ ");"
+  | SetTiming (num, denom) ->
+      "Global time signature for the composition: " ^ string_of_int num ^ "/" ^ string_of_int denom
 
 let extract_id_of_expr = function
  | Ident s -> s
@@ -116,7 +115,7 @@ let extract_id_of_expr = function
  | TimeSig(_, _) -> failwith "Time signature cannot be used as an identifier"
  | _ -> failwith "Expected simple Ident, Member, or IntLit"
 
- let find_function receiver_name method_name arg_expr =
+let find_function receiver_name method_name arg_expr =
   match method_name with
     | "addMeasures" ->
         (* get just the ID of the argument to pass into the stmt *)
@@ -156,7 +155,7 @@ let extract_id_of_expr = function
           | TimeSig (n, d) -> (n, d)
           | _ -> failwith "setTiming expects a time signature"
         in
-        SetTiming (receiver_name, num, denom)
+        SetTiming (num, denom)
 
     | other ->
         failwith ("Unknown method name in FindFunction: " ^ other)

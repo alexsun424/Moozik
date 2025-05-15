@@ -3,6 +3,7 @@ Track testTrack = new Track();
 Track testTrack2 = new Track();
 Section testSection = new Section();
 Section testSection2 = new Section();
+Section testSection3 = new Section();
 Measure testMeasures = new Measure();
 testMeasures.measures = 
 	begin; 
@@ -32,11 +33,32 @@ testMeasures.measures =
 	}
 
 end;
+
+Measure testMeasures2 = new Measure();
+testMeasures2.measures = 
+begin;
+
+c1 c2 c1 c2;
+
+end;
+
+Measure testMeasures3 = new Measure();
+testMeasures3.measures = 
+begin;
+
+c1 c2 c1 c2;
+
+end;
 testSection.addMeasures(testMeasures.measures);
+testSection.addMeasures(testMeasures2.measures);
+testSection3.addMeasures(testMeasures3.measures);
 testTrack.addSection(testSection);
-testTrack.addSection(testSection2);
+testTrack2.addSection(testSection3);
 testTrack.setInstrument(violin);
+testTrack2.setInstrument(piano);
+
+testSection.setKey(100);
+testSection2.setKey(100);
 testComp.addTrack(testTrack);
 testComp.addTrack(testTrack2);
-testSection.setTiming(4/4);
-testSection.setKey(100);
+testComp.setTiming(6/8);

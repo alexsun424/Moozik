@@ -14,16 +14,18 @@
      ] in
      let usage_msg = "usage: ./moozik.native [-a|-s|-l] [file.mz]" in
      let channel = ref stdin in
-     Arg.parse speclist (fun filename -> channel := open_in filename) usage_msg;
+     let input_file = ref "" in
+     Arg.parse speclist (fun filename -> 
+       input_file := filename;
+       channel := open_in filename
+     ) usage_msg;
    
      let lexbuf = Lexing.from_channel !channel in
    
      let ast = Parser.program_rule Scanner.token lexbuf in
+     let sast = Semant.check ast in
      match !action with
-       Ast -> print_string (Ast.string_of_program ast)
-     | _ -> let sast = Semant.check ast in
-       match !action with
-         Ast     -> ()
-       | Sast    -> print_string (Sast.string_of_sprogram sast)
-       | LLVM_IR -> print_string (Llvm.string_of_llmodule (Irgen.translate sast))
+       LLVM_IR -> print_string (Llvm.string_of_llmodule (Irgen.translate sast !input_file))
+     | Ast -> print_string (Ast.string_of_program ast)
+     | Sast -> print_string (Sast.string_of_sprogram sast)
       

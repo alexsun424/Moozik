@@ -158,15 +158,12 @@ let check program =
               else
                 SSetInstrument (track_id, instrument) :: check_stmts (compositions, tracks, sections, measures, instruments, valid_time_signatures) rest
 
-      | SetTiming (section_id, num, denom) ->
-            (* Check if section exists *)
-            if not (StringMap.mem section_id sections)
-            then raise (Failure ("SetTiming: undeclared section " ^ section_id))
+        | SetTiming (num, denom) ->
             (* Check if time signature is valid *)
-            else if not (StringMap.mem (string_of_int num ^ "/" ^ string_of_int denom) valid_time_signatures)
+            if not (StringMap.mem (string_of_int num ^ "/" ^ string_of_int denom) valid_time_signatures)
             then raise (Failure ("SetTiming: invalid time signature " ^ string_of_int num ^ "/" ^ string_of_int denom))
             else
-              SSetTiming (section_id, num, denom) :: check_stmts (compositions, tracks, sections, measures, instruments, valid_time_signatures) rest
+              SSetTiming (num, denom) :: check_stmts (compositions, tracks, sections, measures, instruments, valid_time_signatures) rest
   in
             
   
