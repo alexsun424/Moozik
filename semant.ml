@@ -21,7 +21,12 @@ let check program =
 
   (* Convert a music_item to a semantically checked smusic_item *)
   let rec check_music_item vars = function
-    | Notes notes -> SNotes notes
+    | Notes notes -> 
+        let smusical_elements = List.map (function 
+          | Note n -> SNOTE n
+          | Chord c -> SCHORD c
+        ) notes in
+        SMusicalElements smusical_elements
     | VarRef name ->
         (* Check if the variable exists in the music section *)
         if List.exists (fun (var_name, _) -> var_name = name) vars
@@ -55,9 +60,18 @@ let check program =
     in
     check_duplicates ms.variables;
     
+    (* Convert AST variables to SAST variables *)
+    let svariables = List.map (fun (name, measures) ->
+      let smusical_elements = List.map (function 
+        | Note n -> SNOTE n
+        | Chord c -> SCHORD c
+      ) measures in
+      (name, smusical_elements)
+    ) ms.variables in
+    
     (* Semantically check each music item *)
     {
-      svariables = ms.variables;
+      svariables = svariables;
       sbars = List.map (check_music_item ms.variables) ms.bars
     }
   in

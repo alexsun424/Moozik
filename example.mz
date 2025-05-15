@@ -6,30 +6,29 @@ Section testSection2 = new Section();
 Measure testMeasures = new Measure();
 testMeasures.measures = 
 	begin; 
-	first = 
-	[e+2 d-1 c2 d1;
-  	 e2 e1 e2 r3;]
-	
-	second = 
-	[e1 d1 c1 d1;
-  	 e1 e1 e1 e1;
-  	 d1 d1 e1 d1;
-  	 c1 r1 r1 r1;]
+ <c1 d1 d4>;
+i_see_you = [c2 c2 <c1 d1 d2>;]
+some_notes = [c+1 c-2;]
+c1;
 
-	first
-	e+2 d-1 c2 d1;
-	e2 e1 e2 r3;
-	d1 d1 d1 r1;
-	e1 g1 g1 r1;
+some_notes
+repeat(3) {
+c1 d2;
+  i_see_you
+}
+c1 d1;
+<c1 d1 d3>;
+some_notes
 
-	repeat (3) {
-		first
-		c1 r1;
-		repeat (2) {
-			c1 r1;
-			second
-		}
-	}
+repeat(2) {
+c1;
+  i_see_you
+  repeat(3) {
+    <c1 d1 d4>;
+    a1 b+1 c-1 d1;
+    some_notes
+  }
+}
 
 end;
 testSection.addMeasures(testMeasures.measures);

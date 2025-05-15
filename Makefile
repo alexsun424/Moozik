@@ -12,7 +12,7 @@ moozik.native:
 # Clean up build artifacts
 clean:
 	ocamlbuild -clean
-	rm -rf *.cmi *.cmo *.cmx *.o *.out *.ll *.mid _build -l *.log
+	rm -rf *.cmi *.cmo *.cmx *.o *.out *.ll *.mid _build -l *.log parser.ml parser.mli scanner.ml 
 
 # Test example
 test: moozik.native example.mz
@@ -27,6 +27,17 @@ test: moozik.native example.mz
 	else \
 		echo "Error: example.ll not generated"; \
 	fi
+
+# AST and SAST printer targets
+printast: scanner.ml parser.ml printast.native
+
+printast.native:
+	ocamlbuild -no-hygiene -pkgs llvm printast.native
+
+printsast: scanner.ml parser.ml printsast.native
+
+printsast.native:
+	ocamlbuild -no-hygiene -pkgs llvm printsast.native
 
 # MIDI generator targets
 irgen : ast.cmx irgen.cmx irgen_test.cmx
@@ -77,7 +88,7 @@ moozik_test.out : moozik_test
 irgen.out : irgen
 	./irgen_test
 
-# Depedencies from ocamldep
+# Dependencies from ocamldep
 moozik.cmo : scanner.cmo parser.cmi ast.cmo irgen.cmo
 moozik.cmx : scanner.cmx parser.cmx ast.cmx irgen.cmx
 parser.cmo : ast.cmo parser.cmi
@@ -94,5 +105,8 @@ irgen.cmo : ast.cmo
 irgen.cmx : ast.cmx
 irgen_test.cmo : ast.cmo irgen.cmo
 irgen_test.cmx : ast.cmx irgen.cmx
+printsast.cmo : scanner.cmo parser.cmi semant.cmo sast.cmo ast.cmo
+printsast.cmx : scanner.cmx parser.cmx semant.cmx sast.cmx ast.cmx
+
 ##############################
 
