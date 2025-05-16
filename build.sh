@@ -1,21 +1,19 @@
 #!/bin/bash
 
-# Clean up old files
+# Clean previous builds
+echo "Cleaning previous builds..."
 make clean
 
-# Generate scanner and parser
-ocamlyacc parser.mly
-ocamllex scanner.mll
+# Build the compiler
+echo "Building the compiler..."
+ocamlbuild -pkgs llvm,unix moozik.native
 
-# Compile with OCaml
-ocamlfind ocamlopt -package llvm -c ast.ml
-ocamlfind ocamlopt -package llvm -c parser.mli
-ocamlfind ocamlopt -package llvm -c parser.ml
-ocamlfind ocamlopt -package llvm -c scanner.ml
-ocamlfind ocamlopt -package llvm -c irgen.ml
-ocamlfind ocamlopt -package llvm -c moozik.ml
-ocamlfind ocamlopt -package llvm -linkpkg ast.cmx parser.cmx scanner.cmx irgen.cmx moozik.cmx -o moozik.native
+# Generate LLVM IR
+echo "Generating LLVM IR..."
+./moozik.native -l example.mz > example.ll
 
-echo "Build complete. You can now run:"
-echo "./moozik.native -l example_with_instruments.mz > example.ll"
-echo "lli example.ll" 
+# Run the LLVM IR to generate MIDI
+echo "Generating MIDI file..."
+lli example.ll
+
+echo "Done! Check output.mid for the generated MIDI file." 

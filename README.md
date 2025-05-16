@@ -19,7 +19,7 @@ Similar to the MicroC workflow:
 
 ```bash
 # Build the Moozik compiler
-ocamlbuild -use-ocamlfind moozik.native
+ocamlbuild -pkgs llvm,unix moozik.native
 ```
 
 ### Option 2: Using Make
