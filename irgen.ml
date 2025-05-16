@@ -150,17 +150,10 @@ let generate_midi_bytes notes time_sig_num time_sig_denom instrument track_numbe
     | note :: rest ->
         let (midi_value, beats) = get_midi_value note key in
         let ticks_per_beat = 96 in  (* Standard MIDI resolution *)
-        (* Adjust ticks based on time signature *)
+        (* All time signatures use the same base ticks - time signature only affects grouping *)
         let ticks = 
           let base_ticks = beats * ticks_per_beat in
-          (* For 3/4, make notes 1.33x longer to maintain tempo *)
-          if time_sig_num = 3 && time_sig_denom = 4 then
-            int_of_float (float_of_int base_ticks *. 1.33)
-          (* For 6/8, make notes 0.67x shorter to make it faster *)
-          else if time_sig_num = 6 && time_sig_denom = 8 then
-            int_of_float (float_of_int base_ticks *. 0.67)
-          else
-            base_ticks
+          base_ticks
         in
         
         if midi_value >= 0 then begin  (* Only generate events for non-rest notes *)
