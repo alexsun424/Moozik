@@ -65,7 +65,7 @@ Each note in Moozik is translated to a corresponding MIDI note number:
 
 The MIDI generator creates:
 1. A standard MIDI file with header
-2. Multiple tracks containing notes, with an instrument get to 
+2. Multiple tracks containing notes, with an instrument assigned, and each track's octave is the same.
 3. Simple note-on/note-off events with fixed velocity and duration
 4. LLVM IR code that can be compiled to create the same MIDI file
 

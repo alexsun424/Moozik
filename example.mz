@@ -13,31 +13,26 @@ Measure testMeasures1 = new Measure();
 testMeasures1.measures = 
 	begin; 
 	first = 
-	[e2 d1 c2 d1;
-  	 e2 e1 e2 r3;
+	[
+	 e1 d1 c1 d1;
+  	 e1 e1 e1 r3;
 	]
 	
 	second = 
-	[e1 d1 c1 d1;
+	[
+	 e1 d1 c1 d1;
   	 e1 e1 e1 e1;
   	 d1 d1 e1 d1;
   	 c1 r1 r1 r1;
 	]
 
 	first
-	e2 d1 c2 d1;
-	e2 e1 e2 r3;
+	e1 d1 c1 d1;
+	e1 e1 e1 r3;
 	d1 d1 d1 r1;
 	e1 g1 g1 r1;
 
-	repeat (3) {
-		first
-		c1 r1;
-		repeat (2) {
-			c1 r1;
-			second
-		}
-	}
+	second
 
 end;
 
@@ -65,18 +60,18 @@ testTrack1.addSection(testSection1);
 testTrack1.setInstrument(violin);
 testSection1.setKey(60);
 
+testSection2.addMeasures(testMeasures1.measures);
 testSection2.addMeasures(testMeasures2.measures);
-testSection2.addMeasures(testMeasures3.measures);
 testTrack2.addSection(testSection2);
 testTrack2.setInstrument(french_horn);
-testSection2.setKey(72);
+testSection2.setKey(48);
 
 
-testSection3.addMeasures(testMeasures2.measures);
-testSection3.addMeasures(testMeasures3.measures);
+testSection3.addMeasures(testMeasures1.measures);
+testSection3.addMeasures(testMeasures1.measures);
 testTrack3.addSection(testSection3);
 testTrack3.setInstrument(flute);
-testSection3.setKey(48);
+testSection3.setKey(72);
 
 testComp.addTrack(testTrack1);
 testComp.addTrack(testTrack2);

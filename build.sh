@@ -16,4 +16,4 @@ echo "Generating LLVM IR..."
 echo "Generating MIDI file..."
 lli example.ll
 
-echo "Done! Check output.mid for the generated MIDI file." 
+echo "Done! example.mid for the generated MIDI file." 
