@@ -60,28 +60,48 @@ This will:
 
 Each note in Moozik is translated to a corresponding MIDI note number:
 - Basic notes: c, d, e, f, g, a, b
-- Octave is specified by a digit (e.g., c4 is middle C)
-- Accidentals: # or + for sharp, - or b for flat (e.g., c#4, c+4, or cb4, c-4)
+- Beat (how long a note is palyed) is specified by integer  (e.g., c4 middle c 4 beats played)
+- Accidentals: + for sharp, - for flat (e.g., c+4, or c-4)
 
 The MIDI generator creates:
 1. A standard MIDI file with header
-2. A single track containing all notes
+2. Multiple tracks containing notes, with an instrument get to 
 3. Simple note-on/note-off events with fixed velocity and duration
 4. LLVM IR code that can be compiled to create the same MIDI file
 
 ## Example Music Section
 
 ```
-	begin; 
-chord_c = [c4 e4 g4]
-chord_g = [g4 b4 d5]
-c4 d4 e4;
-chord_c;
-g4 a4 b4;
-chord_g;
-repeat(2) {
-  c5 b4 a4 g4;
-}
+begin; 
+	first = 
+	[
+	 e2 d1 c2 d1;
+  	 e2 e1 e2 r3;
+	]
+	
+	second = 
+	[
+	 e1 d1 c1 d1;
+  	 e1 e1 e1 e1;
+  	 d1 d1 e1 d1;
+  	 c1 r1 r1 r1;
+	]
+
+	first
+	e2 d1 c2 d1;
+	e2 e1 e2 r3;
+	d1 d1 d1 r1;
+	e1 g1 g1 r1;
+
+	repeat (3) {
+		first
+		c1 r1;
+		repeat (2) {
+			c1 r1;
+			second
+		}
+	}
+
 end;
 ```
 
@@ -94,8 +114,8 @@ end;
 # Run the LLVM IR to create a MIDI file
 lli example.ll
 
-# Verify that output.mid was created
-ls -la output.mid
+# Verify that example.mid was created
+ls -la example.mid
 ```
 ## Debugging
 If you want to debug after making changes to the front-end (parser/scanner/ast) 
@@ -104,14 +124,6 @@ without running entire llvm, you can run these commands
 make clean
 make printast
 cat example.mz | ./printast.native
-```
-
-If you want to debug after making changes to the back-end (semantic parser/sast) 
-without running entire llvm, you can run these commands
-```bash
-make clean
-make printsast
-./printsast.native < example.mz
 ```
 
 

@@ -5,14 +5,16 @@ Section testSection1 = new Section();
 
 Measure testMeasures1 = new Measure();
 testMeasures1.measures = 
-	begin; 
+begin; 
 	first = 
-	[e2 d1 c2 d1;
+	[
+	 e2 d1 c2 d1;
   	 e2 e1 e2 r3;
 	]
 	
 	second = 
-	[e1 d1 c1 d1;
+	[
+	 e1 d1 c1 d1;
   	 e1 e1 e1 e1;
   	 d1 d1 e1 d1;
   	 c1 r1 r1 r1;
