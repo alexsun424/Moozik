@@ -1,0 +1,36 @@
+Composition comp1 = new Composition();
+
+Track track1 = new Track();
+Section section1 = new Section();
+
+Track track2 = new Track();
+Section section2 = new Section();
+
+Measure measure1 = new Measure();
+measure1.measures = 
+begin;
+notes1 = [c1 d2;]
+
+repeat(3) {
+	notes1
+	c1 d1 e1 f1;
+	notes1
+}
+
+end;
+
+section1.addMeasures(measure1.measures);
+section1.setKey(60);
+
+track1.addSection(section1);
+track1.setInstrument(piano);
+
+section2.addMeasures(measure1.measures);
+section2.setKey(72);
+
+track2.addSection(section2);
+track2.setInstrument(french_horn);
+
+comp1.addTrack(track1);
+comp1.addTrack(track2);
+comp1.setTiming(4/4);

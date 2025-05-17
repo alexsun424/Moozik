@@ -64,29 +64,29 @@ let get_midi_value note_str key =
     let midi_value = base_value + (octave * 12) + accidental_offset in
     (midi_value, beats)
 
-let flatten_music_section (section : music_section) =
+let flatten_music_section (section : smusic_section) =
   (* Convert variables list to hashtable for lookup *)
-  let vars_tbl = Hashtbl.create (List.length section.variables) in
-  List.iter (fun (name, notes) -> Hashtbl.add vars_tbl name notes) section.variables;
+  let vars_tbl = Hashtbl.create (List.length section.svariables) in
+  List.iter (fun (name, notes) -> Hashtbl.add vars_tbl name notes) section.svariables;
 
   let rec expand_item item =
     match item with
-    | Notes bar -> bar
-    | VarRef name -> 
+    | SMusicalElements bar -> bar
+    | SVarRef name -> 
         (try Hashtbl.find vars_tbl name
          with Not_found -> []) (* Return empty list if variable not found *)
-    | Repeat { count; body } ->
-        List.flatten (List.init count (fun _ -> 
-          List.flatten (List.map expand_item body)))
+    | SRepeat { scount; sbody } ->
+        List.flatten (List.init scount (fun _ -> 
+          List.flatten (List.map expand_item sbody)))
   in
   
   (* Convert musical elements to strings *)
   let rec element_to_string = function
-    | Note n -> n
-    | Chord notes -> "<" ^ String.concat " " notes ^ ">"
+    | SNOTE n -> n
+    | SCHORD notes -> "<" ^ String.concat " " notes ^ ">"
   in
   
-  List.map element_to_string (List.flatten (List.map expand_item section.bars))
+  List.map element_to_string (List.flatten (List.map expand_item section.sbars))
 
 (* Map instrument names to MIDI program numbers *)
 let get_instrument_number = function
@@ -369,39 +369,6 @@ let translate sast input_file =
     
     let sections = process_sections StringMap.empty section_ids in
     
-    (* Convert SAST music section to AST format for existing code *)
-    let to_ast_section section =
-      (* Convert SAST musical elements to AST musical elements *)
-      let rec convert_musical_element = function
-        | SNOTE n -> Note n
-        | SCHORD notes -> Chord notes
-      in
-      
-      (* Convert SAST variables to AST variables *)
-      let convert_variables = List.map (fun (name, elements) ->
-        (name, List.map convert_musical_element elements)
-      ) in
-      
-      let rec convert_item item =
-        match item with
-        | SMusicalElements elements -> 
-            Notes (List.map convert_musical_element elements)
-        | SVarRef name -> VarRef name
-        | SRepeat { scount; sbody } -> 
-            Repeat { count = scount; body = List.map convert_item sbody }
-      in
-      
-      { variables = convert_variables section.svariables; 
-        bars = List.map convert_item section.sbars }
-    in
-    
-    (* Convert all sections to AST format *)
-    let ast_sections = 
-      StringMap.fold (fun _ section acc ->
-        (to_ast_section section) :: acc
-      ) sections []
-    in
-    
     (* Get instruments for each track *)
     let rec get_track_instruments stmts =
       match stmts with
@@ -481,7 +448,9 @@ let translate sast input_file =
       ) StringMap.empty (List.mapi (fun i id -> (id, i)) track_ids)
     in
     
-    (ast_sections, time_sig_num, time_sig_denom, section_instruments, section_to_track, section_ids, track_to_index, section_to_key)
+    (StringMap.fold (fun _ section acc -> section :: acc) sections [], 
+     time_sig_num, time_sig_denom, section_instruments, section_to_track, 
+     section_ids, track_to_index, section_to_key)
   in
   
   let (sections, time_sig_num, time_sig_denom, section_instruments, section_to_track, section_ids, track_to_index, section_to_key) = 
