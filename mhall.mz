@@ -1,0 +1,28 @@
+Composition testComp = new Composition();
+
+Track testTrack1 = new Track();
+
+Section testSection1 = new Section();
+
+Measure testMeasures1 = new Measure();
+testMeasures1.measures = 
+        
+begin; 
+    
+        e1 d1 c1 d1;
+        e1 e1 e2 d1;
+        d1 d2 e1 g1;
+        g2;
+        e1 d1 c1 d1;
+        e1 e1 e2 d1;
+        d1 e1 d1 c4;
+
+end;
+
+testSection1.addMeasures(testMeasures1.measures);
+testTrack1.addSection(testSection1);
+testTrack1.setInstrument(flute);
+testSection1.setKey(72);
+
+testComp.addTrack(testTrack1);
+testComp.setTiming(4/4);

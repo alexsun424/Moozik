@@ -1,0 +1,35 @@
+Composition testComp = new Composition();
+
+Track testTrack1 = new Track();
+
+Section testSection1 = new Section();
+
+Measure testMeasures1 = new Measure();
+testMeasures1.measures = 
+begin; 
+        c1 c1 g1 g1;
+        a1 a1 g4;
+        f1 f1 e1 e1;
+        d1; d1; c4;
+
+end;
+
+Measure testMeasures2 = new Measure();
+testMeasures2.measures = 
+begin; 
+        g1 g1 f1 f1;                                                                             
+        e1 e1 d3;
+        g1 g1 f1 f1;
+        e1 d1 c4;
+
+end;
+
+testSection1.addMeasures(testMeasures1.measures);
+testSection1.addMeasures(testMeasures2.measures);
+testSection1.addMeasures(testMeasures1.measures);
+testTrack1.addSection(testSection1);
+testTrack1.setInstrument(piano);
+testSection1.setKey(60);
+
+testComp.addTrack(testTrack1);
+testComp.setTiming(4/4);
